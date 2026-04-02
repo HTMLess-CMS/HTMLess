@@ -1,0 +1,286 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Spaces (Multi-tenancy) ───
+
+model Space {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  contentTypes ContentType[]
+  entries      Entry[]
+  assets       Asset[]
+  apiTokens    ApiToken[]
+  previewTokens PreviewToken[]
+  webhooks     Webhook[]
+  roleBindings RoleBinding[]
+  auditLogs    AuditLog[]
+
+  @@map("spaces")
+}
+
+// ─── Users & Auth ───
+
+model User {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  passwordHash  String
+  name          String
+  avatarUrl     String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  roleBindings   RoleBinding[]
+  apiTokens      ApiToken[]
+  previewTokens  PreviewToken[]
+  entryVersions  EntryVersion[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model Role {
+  id           String   @id @default(cuid())
+  name         String   @unique // admin, editor, author, viewer
+  permissions  Json     // { "entry.create": true, "entry.publish": true, ... }
+  builtIn      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  roleBindings RoleBinding[]
+
+  @@map("roles")
+}
+
+model RoleBinding {
+  id        String   @id @default(cuid())
+  userId    String
+  roleId    String
+  spaceId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role  Role  @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId, spaceId])
+  @@map("role_bindings")
+}
+
+model ApiToken {
+  id          String    @id @default(cuid())
+  name        String
+  tokenHash   String    @unique
+  scopes      Json      // ["cda:read", "cma:write"]
+  spaceId     String
+  createdById String
+  expiresAt   DateTime?
+  lastUsedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  space     Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  createdBy User  @relation(fields: [createdById], references: [id])
+
+  @@map("api_tokens")
+}
+
+model PreviewToken {
+  id          String    @id @default(cuid())
+  tokenHash   String    @unique
+  spaceId     String
+  entryId     String?
+  route       String?
+  createdById String
+  expiresAt   DateTime
+  createdAt   DateTime  @default(now())
+
+  space     Space  @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  entry     Entry? @relation(fields: [entryId], references: [id])
+  createdBy User   @relation(fields: [createdById], references: [id])
+
+  @@map("preview_tokens")
+}
+
+// ─── Schema Registry ───
+
+model ContentType {
+  id          String   @id @default(cuid())
+  spaceId     String
+  key         String   // "article", "page", "product"
+  name        String   // "Article"
+  description String?
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  space   Space   @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  fields  Field[]
+  entries Entry[]
+
+  @@unique([spaceId, key])
+  @@map("content_types")
+}
+
+model Field {
+  id              String   @id @default(cuid())
+  contentTypeId   String
+  key             String   // "title", "body", "heroImage"
+  name            String   // "Title"
+  type            String   // text, richtext, number, boolean, date, media, reference, json, slug, enum
+  required        Boolean  @default(false)
+  unique          Boolean  @default(false)
+  localized       Boolean  @default(false)
+  validations     Json?    // { minLength: 1, maxLength: 255, ... }
+  defaultValue    Json?
+  enumValues      Json?    // ["draft", "active", "archived"]
+  referenceTarget String?  // content type key for reference fields
+  sortOrder       Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  contentType ContentType @relation(fields: [contentTypeId], references: [id], onDelete: Cascade)
+
+  @@unique([contentTypeId, key])
+  @@map("fields")
+}
+
+// ─── Content ───
+
+model Entry {
+  id            String   @id @default(cuid())
+  spaceId       String
+  contentTypeId String
+  slug          String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  space       Space        @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  contentType ContentType  @relation(fields: [contentTypeId], references: [id])
+  versions    EntryVersion[]
+  state       EntryState?
+  previewTokens PreviewToken[]
+
+  @@unique([spaceId, contentTypeId, slug])
+  @@map("entries")
+}
+
+model EntryVersion {
+  id          String   @id @default(cuid())
+  entryId     String
+  kind        String   // "draft" | "published"
+  data        Json     // { title: "Hello", body: [...] }
+  etag        String
+  createdById String
+  createdAt   DateTime @default(now())
+
+  entry     Entry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  createdBy User  @relation(fields: [createdById], references: [id])
+
+  // Reverse relations for entry state
+  draftStates     EntryState[] @relation("DraftVersion")
+  publishedStates EntryState[] @relation("PublishedVersion")
+
+  @@index([entryId, createdAt(sort: Desc)])
+  @@map("entry_versions")
+}
+
+model EntryState {
+  id                 String    @id @default(cuid())
+  entryId            String    @unique
+  status             String    @default("draft") // draft, published, scheduled, archived
+  draftVersionId     String
+  publishedVersionId String?
+  scheduledAt        DateTime?
+  updatedAt          DateTime  @updatedAt
+
+  entry            Entry        @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  draftVersion     EntryVersion @relation("DraftVersion", fields: [draftVersionId], references: [id])
+  publishedVersion EntryVersion? @relation("PublishedVersion", fields: [publishedVersionId], references: [id])
+
+  @@map("entry_state")
+}
+
+// ─── Media ───
+
+model Asset {
+  id          String   @id @default(cuid())
+  spaceId     String
+  filename    String
+  mimeType    String
+  bytes       Int
+  width       Int?
+  height      Int?
+  alt         String?
+  caption     String?
+  storageKey  String   // path in storage provider
+  checksum    String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  space  Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@map("assets")
+}
+
+// ─── Webhooks ───
+
+model Webhook {
+  id            String   @id @default(cuid())
+  spaceId       String
+  url           String
+  events        Json     // ["entry.published", "asset.created"]
+  signingSecret String
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  space      Space              @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  deliveries WebhookDelivery[]
+
+  @@map("webhooks")
+}
+
+model WebhookDelivery {
+  id            String   @id @default(cuid())
+  webhookId     String
+  eventType     String
+  payload       Json
+  statusCode    Int?
+  responseTime  Int?     // ms
+  attempt       Int      @default(1)
+  success       Boolean  @default(false)
+  error         String?
+  createdAt     DateTime @default(now())
+
+  webhook Webhook @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+
+  @@index([webhookId, createdAt(sort: Desc)])
+  @@map("webhook_deliveries")
+}
+
+// ─── Audit ───
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  spaceId   String
+  userId    String?
+  action    String   // "entry.created", "schema.updated", "user.login"
+  resource  String?  // "entry:ent_123", "contentType:article"
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user  User? @relation(fields: [userId], references: [id])
+
+  @@index([spaceId, createdAt(sort: Desc)])
+  @@map("audit_logs")
+}

@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTMLess — The Open Source Headless CMS That Doesn't Suck</title>
+    <meta name="description" content="HTMLess is an open source headless CMS with instant REST + GraphQL APIs, a schema builder like Notion, and multi-site support. Self-host free or use our cloud.">
+    <meta name="keywords" content="headless CMS, open source CMS, Strapi alternative, headless CMS for Next.js, content management API, schema builder, REST API CMS, GraphQL CMS">
+    <meta name="author" content="HTMLess">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://htmless.com/">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="HTMLess — The Open Source Headless CMS That Doesn't Suck">
+    <meta property="og:description" content="Schema builder like Notion. Instant API. Multi-site. Self-host free or use our cloud. The headless CMS developers actually want to use.">
+    <meta property="og:url" content="https://htmless.com/">
+    <meta property="og:site_name" content="HTMLess">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HTMLess — Open Source Headless CMS">
+    <meta name="twitter:description" content="Schema builder like Notion. Instant API. Multi-site. The CMS developers actually want to use.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #09090b;
+            --bg-surface: #18181b;
+            --bg-elevated: #27272a;
+            --border: #27272a;
+            --border-subtle: #1e1e22;
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dim: #71717a;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --green: #22c55e;
+            --amber: #f59e0b;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+        }
+        code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(9, 9, 11, 0.8);
+            backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid var(--border-subtle);
+            height: 64px;
+        }
+        .nav-inner {
+            max-width: 1200px; margin: 0 auto; padding: 0 2rem;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 100%;
+        }
+        .nav-logo {
+            font-size: 1.3rem; font-weight: 800; color: var(--text);
+            text-decoration: none; letter-spacing: -0.03em;
+        }
+        .nav-logo span { color: var(--accent); }
+        .nav-links { display: flex; align-items: center; gap: 2rem; list-style: none; }
+        .nav-links a {
+            color: var(--text-muted); text-decoration: none; font-size: 0.875rem;
+            font-weight: 500; transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--text); }
+        .nav-cta {
+            background: var(--accent); color: var(--text); padding: 0.5rem 1.25rem;
+            border-radius: 6px; font-size: 0.85rem; font-weight: 600;
+            text-decoration: none; transition: all 0.2s;
+        }
+        .nav-cta:hover { background: var(--accent-light); }
+        .nav-github {
+            color: var(--text-muted); text-decoration: none; font-size: 0.85rem;
+            font-weight: 500; display: flex; align-items: center; gap: 0.4rem;
+            border: 1px solid var(--border); padding: 0.45rem 1rem; border-radius: 6px;
+            transition: all 0.2s;
+        }
+        .nav-github:hover { border-color: var(--text-muted); color: var(--text); }
+        .hamburger {
+            display: none; background: none; border: none; cursor: pointer;
+            flex-direction: column; gap: 5px; padding: 4px;
+        }
+        .hamburger span { display: block; width: 22px; height: 2px; background: var(--text); transition: 0.3s; }
+        .mobile-menu {
+            display: none; position: fixed; top: 64px; left: 0; right: 0; z-index: 99;
+            background: rgba(9,9,11,0.98); backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border); flex-direction: column;
+        }
+        .mobile-menu.open { display: flex; }
+        .mobile-menu a {
+            color: var(--text-muted); text-decoration: none; font-size: 1rem; font-weight: 500;
+            padding: 1rem 2rem; transition: 0.2s;
+        }
+        .mobile-menu a:hover { color: var(--text); background: var(--bg-surface); }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh; display: flex; align-items: center; justify-content: center;
+            text-align: center; position: relative; padding: 8rem 2rem 6rem;
+        }
+        .hero::before {
+            content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+            width: 800px; height: 600px;
+            background: radial-gradient(ellipse, var(--accent-glow) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-content { position: relative; max-width: 800px; }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: 999px; padding: 0.4rem 1rem; margin-bottom: 2rem;
+            font-size: 0.8rem; color: var(--text-muted);
+        }
+        .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+        .hero h1 {
+            font-size: clamp(2.8rem, 7vw, 5rem); font-weight: 900;
+            line-height: 1.05; letter-spacing: -0.04em; margin-bottom: 1.5rem;
+        }
+        .hero h1 .gradient {
+            background: linear-gradient(135deg, var(--accent) 0%, var(--accent-light) 50%, #c084fc 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .hero-desc {
+            font-size: 1.15rem; color: var(--text-muted); max-width: 600px;
+            margin: 0 auto 2.5rem; line-height: 1.7;
+        }
+        .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+        .btn {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.8rem 1.75rem; font-size: 0.95rem; font-weight: 600;
+            text-decoration: none; border-radius: 8px; transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--accent); color: var(--text);
+            box-shadow: 0 0 20px var(--accent-glow), 0 4px 12px rgba(0,0,0,0.3);
+        }
+        .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); }
+        .btn-ghost {
+            background: transparent; color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-ghost:hover { border-color: var(--text-muted); background: var(--bg-surface); }
+        .hero-code {
+            margin-top: 3rem; background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: 10px; padding: 1.25rem 1.75rem; text-align: left;
+            font-size: 0.9rem; color: var(--text-muted); max-width: 500px; margin-left: auto; margin-right: auto;
+        }
+        .hero-code .prompt { color: var(--accent-light); }
+        .hero-code .cmd { color: var(--text); }
+
+        /* ── SECTIONS ── */
+        section { padding: 6rem 2rem; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .section-label {
+            font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--accent-light); margin-bottom: 0.75rem;
+        }
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3rem); font-weight: 800;
+            letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 1rem;
+        }
+        .section-desc {
+            font-size: 1.05rem; color: var(--text-muted); max-width: 600px; line-height: 1.7;
+        }
+        .section-header { text-align: center; margin-bottom: 4rem; }
+        .section-header .section-desc { margin: 0 auto; }
+
+        /* ── FEATURES GRID ── */
+        .features { background: var(--bg); }
+        .features-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem;
+        }
+        .feature-card {
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: 12px; padding: 2rem;
+            transition: border-color 0.25s, transform 0.25s;
+        }
+        .feature-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+        .feature-icon {
+            width: 44px; height: 44px; border-radius: 10px;
+            background: var(--accent-glow); display: flex; align-items: center;
+            justify-content: center; font-size: 1.2rem; margin-bottom: 1.25rem;
+        }
+        .feature-card h3 {
+            font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem;
+            letter-spacing: -0.01em;
+        }
+        .feature-card p { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; }
+        .feature-tag {
+            display: inline-block; font-size: 0.7rem; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            padding: 0.2rem 0.6rem; border-radius: 4px; margin-top: 0.75rem;
+        }
+        .tag-core { background: rgba(34,197,94,0.1); color: var(--green); }
+        .tag-soon { background: rgba(245,158,11,0.1); color: var(--amber); }
+
+        /* ── HOW IT WORKS ── */
+        .how { background: var(--bg-surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .steps {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem;
+            margin-top: 3rem;
+        }
+        .step { text-align: center; }
+        .step-num {
+            width: 48px; height: 48px; border-radius: 50%;
+            background: var(--accent-glow); border: 2px solid var(--accent);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; font-weight: 800; color: var(--accent-light);
+            margin: 0 auto 1rem;
+        }
+        .step h3 { font-size: 1rem; font-weight: 700; margin-bottom: 0.4rem; }
+        .step p { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+
+        /* ── CODE EXAMPLE ── */
+        .code-section { background: var(--bg); }
+        .code-split {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 4rem; align-items: center;
+        }
+        .code-block {
+            background: var(--bg-surface); border: 1px solid var(--border);
+            border-radius: 12px; overflow: hidden;
+        }
+        .code-header {
+            display: flex; align-items: center; gap: 0.5rem;
+            padding: 0.75rem 1.25rem; border-bottom: 1px solid var(--border);
+            background: rgba(39,39,42,0.5);
+        }
+        .code-dot { width: 10px; height: 10px; border-radius: 50%; }
+        .code-dot.r { background: #ef4444; }
+        .code-dot.y { background: #f59e0b; }
+        .code-dot.g { background: #22c55e; }
+        .code-filename { font-size: 0.75rem; color: var(--text-dim); margin-left: 0.75rem; }
+        .code-body {
+            padding: 1.25rem; font-size: 0.8rem; line-height: 1.8;
+            color: var(--text-muted); overflow-x: auto;
+        }
+        .code-body .key { color: var(--accent-light); }
+        .code-body .str { color: #22c55e; }
+        .code-body .comment { color: var(--text-dim); }
+        .code-body .method { color: #f59e0b; }
+        .code-body .num { color: #f472b6; }
+
+        /* ── COMPARISON ── */
+        .comparison { background: var(--bg); }
+        .comp-table {
+            width: 100%; border-collapse: collapse;
+            background: var(--bg-surface); border-radius: 12px; overflow: hidden;
+            border: 1px solid var(--border);
+        }
+        .comp-table th, .comp-table td {
+            padding: 1rem 1.5rem; text-align: left; font-size: 0.875rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .comp-table th {
+            font-weight: 600; color: var(--text-dim); font-size: 0.75rem;
+            text-transform: uppercase; letter-spacing: 0.06em;
+            background: rgba(39,39,42,0.5);
+        }
+        .comp-table td { color: var(--text-muted); }
+        .comp-table td:first-child { color: var(--text); font-weight: 500; }
+        .comp-table tr:last-child td { border-bottom: none; }
+        .comp-table .check { color: var(--green); }
+        .comp-table .cross { color: var(--text-dim); }
+        .comp-table .highlight { color: var(--accent-light); font-weight: 600; }
+
+        /* ── PRICING ── */
+        .pricing { background: var(--bg-surface); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+        .pricing-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; }
+        .price-card {
+            background: var(--bg); border: 1px solid var(--border);
+            border-radius: 12px; padding: 2rem; position: relative;
+        }
+        .price-card.featured { border-color: var(--accent); }
+        .price-card.featured::before {
+            content: 'Most Popular'; position: absolute; top: -12px; left: 50%;
+            transform: translateX(-50%); background: var(--accent); color: var(--text);
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            padding: 0.25rem 0.75rem; border-radius: 999px; letter-spacing: 0.04em;
+        }
+        .price-card h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .price-amount {
+            font-size: 2.5rem; font-weight: 900; letter-spacing: -0.04em;
+            margin-bottom: 0.25rem;
+        }
+        .price-amount .currency { font-size: 1.25rem; vertical-align: top; color: var(--text-muted); }
+        .price-amount .period { font-size: 0.9rem; font-weight: 400; color: var(--text-dim); }
+        .price-desc { font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1.5rem; }
+        .price-features { list-style: none; margin-bottom: 1.5rem; }
+        .price-features li {
+            font-size: 0.8rem; color: var(--text-muted); padding: 0.3rem 0;
+        }
+        .price-features li::before { content: '\2713'; color: var(--accent-light); margin-right: 0.5rem; font-weight: 700; }
+        .btn-price {
+            display: block; text-align: center; padding: 0.7rem;
+            border-radius: 6px; font-size: 0.85rem; font-weight: 600;
+            text-decoration: none; transition: 0.2s;
+        }
+        .btn-price-primary { background: var(--accent); color: var(--text); }
+        .btn-price-primary:hover { background: var(--accent-light); }
+        .btn-price-ghost { border: 1px solid var(--border); color: var(--text); }
+        .btn-price-ghost:hover { border-color: var(--text-muted); }
+
+        /* ── OPEN SOURCE CTA ── */
+        .oss-cta {
+            text-align: center; background: var(--bg);
+            padding: 8rem 2rem;
+        }
+        .oss-cta h2 {
+            font-size: clamp(2rem, 5vw, 3.5rem); font-weight: 900;
+            letter-spacing: -0.04em; margin-bottom: 1rem;
+        }
+        .oss-cta p {
+            font-size: 1.1rem; color: var(--text-muted); max-width: 550px;
+            margin: 0 auto 2.5rem; line-height: 1.7;
+        }
+
+        /* ── FOOTER ── */
+        footer {
+            background: var(--bg); border-top: 1px solid var(--border);
+            padding: 4rem 2rem 2rem;
+        }
+        .footer-inner {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 3rem;
+        }
+        .footer-brand p { font-size: 0.85rem; color: var(--text-dim); line-height: 1.6; margin-top: 0.75rem; }
+        .footer-col h4 {
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 1rem;
+        }
+        .footer-col a {
+            display: block; color: var(--text-muted); text-decoration: none;
+            font-size: 0.85rem; padding: 0.25rem 0; transition: color 0.2s;
+        }
+        .footer-col a:hover { color: var(--text); }
+        .footer-bottom {
+            max-width: 1200px; margin: 3rem auto 0;
+            padding-top: 1.5rem; border-top: 1px solid var(--border);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .footer-bottom p { font-size: 0.75rem; color: var(--text-dim); }
+        .footer-bottom a { color: var(--text-dim); text-decoration: none; font-size: 0.75rem; }
+        .footer-bottom a:hover { color: var(--text-muted); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 1024px) {
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .steps { grid-template-columns: repeat(2, 1fr); }
+            .code-split { grid-template-columns: 1fr; gap: 2rem; }
+            .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+            .footer-inner { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hamburger { display: flex; }
+            .features-grid { grid-template-columns: 1fr; }
+            .steps { grid-template-columns: 1fr; gap: 1.5rem; }
+            .pricing-grid { grid-template-columns: 1fr; }
+            .footer-inner { grid-template-columns: 1fr; }
+            .comp-table { font-size: 0.8rem; }
+            .comp-table th, .comp-table td { padding: 0.75rem; }
+        }
+    </style>
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "HTMLess",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Linux, macOS, Windows (Docker)",
+        "description": "Open source headless CMS with instant REST + GraphQL APIs, a schema builder like Notion, and multi-site support.",
+        "offers": [
+            { "@type": "Offer", "price": "0", "priceCurrency": "USD", "description": "Free — Self-hosted" },
+            { "@type": "Offer", "price": "29", "priceCurrency": "USD", "description": "Starter — Small apps" },
+            { "@type": "Offer", "price": "99", "priceCurrency": "USD", "description": "Growth — Growing SaaS" },
+            { "@type": "Offer", "price": "299", "priceCurrency": "USD", "description": "Scale — Agencies" }
+        ]
+    }
+    </script>
+</head>
+<body>
+
+    <!-- NAV -->
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-logo">HTML<span>ess</span></a>
+            <ul class="nav-links">
+                <li><a href="#features">Features</a></li>
+                <li><a href="#how">How It Works</a></li>
+                <li><a href="#api">API</a></li>
+                <li><a href="#compare">Compare</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#" class="nav-github"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> GitHub</a></li>
+            </ul>
+            <button class="hamburger" onclick="document.querySelector('.mobile-menu').classList.toggle('open')" aria-label="Menu">
+                <span></span><span></span><span></span>
+            </button>
+            <a href="#pricing" class="nav-cta" style="margin-left:0.5rem">Get Started</a>
+        </div>
+    </nav>
+
+    <!-- MOBILE MENU -->
+    <div class="mobile-menu">
+        <a href="#features" onclick="document.querySelector('.mobile-menu').classList.remove('open')">Features</a>
+        <a href="#how" onclick="document.querySelector('.mobile-menu').classList.remove('open')">How It Works</a>
+        <a href="#api" onclick="document.querySelector('.mobile-menu').classList.remove('open')">API</a>
+        <a href="#compare" onclick="document.querySelector('.mobile-menu').classList.remove('open')">Compare</a>
+        <a href="#pricing" onclick="document.querySelector('.mobile-menu').classList.remove('open')">Pricing</a>
+    </div>
+
+    <!-- HERO -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <span class="dot"></span>
+                Open Source &middot; MIT Licensed
+            </div>
+            <h1>The headless CMS<br>that <span class="gradient">doesn't suck</span></h1>
+            <p class="hero-desc">
+                Schema builder like Notion. Instant REST &amp; GraphQL APIs. Multi-site from day one.
+                Self-host free forever, or let us handle the infra.
+            </p>
+            <div class="hero-actions">
+                <a href="#pricing" class="btn btn-primary">Start Building &rarr;</a>
+                <a href="#features" class="btn btn-ghost">See Features</a>
+            </div>
+            <div class="hero-code mono">
+                <span class="prompt">$</span> <span class="cmd">docker compose up -d</span><br>
+                <span style="color:var(--green);">&#10003;</span> <span style="color:var(--text-dim);">HTMLess running at</span> <span style="color:var(--accent-light);">http://localhost:3000</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <p class="section-label">Features</p>
+                <h2 class="section-title">Five things. Done right.</h2>
+                <p class="section-desc">We don't ship 200 half-baked features. We ship 5 that make you go "finally, someone gets it."</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">&#9634;</div>
+                    <h3>Schema Builder</h3>
+                    <p>Drag-and-drop content types like Notion meets Airtable. Add fields, set validations, see your API update in real time. Zero developer friction.</p>
+                    <span class="feature-tag tag-core">Core</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#9889;</div>
+                    <h3>Instant API</h3>
+                    <p>REST and GraphQL endpoints auto-generated from your schema. Authentication built-in. No config files, no code generation, no waiting.</p>
+                    <span class="feature-tag tag-core">Core</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#128279;</div>
+                    <h3>Webhooks &amp; Automations</h3>
+                    <p>Zapier-style event triggers with HMAC signing, automatic retries, and delivery logs. Connect to anything without middleware.</p>
+                    <span class="feature-tag tag-core">Core</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#9775;</div>
+                    <h3>Blazing Fast Admin</h3>
+                    <p>Dark mode native. Keyboard-first. Every interaction under 100ms. Built with Next.js, Radix, and Tailwind. Cleaner than Strapi.</p>
+                    <span class="feature-tag tag-core">Core</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#127760;</div>
+                    <h3>Multi-Site</h3>
+                    <p>Run multiple websites from one instance. Isolated content, shared infrastructure. The agency play that nobody else has nailed.</p>
+                    <span class="feature-tag tag-core">Core</span>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">&#129302;</div>
+                    <h3>AI Schema Generation</h3>
+                    <p>Describe your content in plain English. HTMLess generates the schema, fields, and API endpoints. Paste JSON, get a full backend.</p>
+                    <span class="feature-tag tag-soon">Coming Soon</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="how" id="how">
+        <div class="container">
+            <div class="section-header">
+                <p class="section-label">How It Works</p>
+                <h2 class="section-title">Schema to production in minutes</h2>
+                <p class="section-desc">No boilerplate. No config ceremony. Define your content, get your API, ship.</p>
+            </div>
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <h3>Define Schema</h3>
+                    <p>Drag and drop fields to create your content types. Text, media, references, blocks&mdash;all visual.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <h3>Create Content</h3>
+                    <p>Block-based editor with draft/publish workflow, version history, and scheduling. WordPress-grade authoring UX.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <h3>Fetch via API</h3>
+                    <p>REST and GraphQL ready instantly. Scoped tokens, field selection, embedded references. CDN-cacheable.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">4</div>
+                    <h3>Preview &amp; Publish</h3>
+                    <p>Secure draft preview with short-lived tokens. One-click publish. Webhooks fire, caches invalidate, builds trigger.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- API EXAMPLE -->
+    <section class="code-section" id="api">
+        <div class="container">
+            <div class="code-split">
+                <div>
+                    <p class="section-label">Developer Experience</p>
+                    <h2 class="section-title">APIs that feel<br>like they should</h2>
+                    <p class="section-desc" style="margin-bottom:1.5rem;">
+                        Clean REST endpoints with JSON Schema contracts. Field selection, embedded references, conditional requests.
+                        Inspired by the best parts of WordPress REST, without the baggage.
+                    </p>
+                    <p class="section-desc">
+                        Three separate API surfaces: <strong style="color:var(--text)">CMA</strong> for editors,
+                        <strong style="color:var(--text)">CDA</strong> for frontends,
+                        <strong style="color:var(--text)">Preview</strong> for drafts.
+                        Each with the right auth and caching semantics.
+                    </p>
+                </div>
+                <div class="code-block">
+                    <div class="code-header">
+                        <span class="code-dot r"></span>
+                        <span class="code-dot y"></span>
+                        <span class="code-dot g"></span>
+                        <span class="code-filename">GET /cda/v1/content/article</span>
+                    </div>
+                    <pre class="code-body mono">{
+  <span class="key">"data"</span>: [{
+    <span class="key">"id"</span>: <span class="str">"ent_8f3c"</span>,
+    <span class="key">"type"</span>: <span class="str">"article"</span>,
+    <span class="key">"slug"</span>: <span class="str">"hello-world"</span>,
+    <span class="key">"fields"</span>: {
+      <span class="key">"title"</span>: <span class="str">"Hello World"</span>,
+      <span class="key">"body"</span>: [<span class="comment">/* blocks */</span>],
+      <span class="key">"author"</span>: {
+        <span class="key">"name"</span>: <span class="str">"Jane"</span>
+      },
+      <span class="key">"heroImage"</span>: {
+        <span class="key">"url"</span>: <span class="str">"https://assets.htmle.ss/photo.jpg?w=1200&amp;fm=webp"</span>
+      }
+    },
+    <span class="key">"state"</span>: <span class="str">"published"</span>
+  }],
+  <span class="key">"meta"</span>: { <span class="key">"total"</span>: <span class="num">1</span> }
+}</pre>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- COMPARISON -->
+    <section class="comparison" id="compare">
+        <div class="container">
+            <div class="section-header">
+                <p class="section-label">Comparison</p>
+                <h2 class="section-title">How HTMLess stacks up</h2>
+            </div>
+            <table class="comp-table">
+                <thead>
+                    <tr>
+                        <th>Feature</th>
+                        <th class="highlight">HTMLess</th>
+                        <th>Strapi</th>
+                        <th>Contentful</th>
+                        <th>Sanity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Open Source</td>
+                        <td class="check highlight">MIT Core</td>
+                        <td class="check">Yes</td>
+                        <td class="cross">No</td>
+                        <td class="cross">Partial</td>
+                    </tr>
+                    <tr>
+                        <td>Self-Hostable</td>
+                        <td class="check highlight">Docker 1-cmd</td>
+                        <td class="check">Yes</td>
+                        <td class="cross">No</td>
+                        <td class="cross">No</td>
+                    </tr>
+                    <tr>
+                        <td>Visual Schema Builder</td>
+                        <td class="check highlight">Drag &amp; Drop</td>
+                        <td class="check">Basic</td>
+                        <td class="check">Yes</td>
+                        <td class="cross">Code Only</td>
+                    </tr>
+                    <tr>
+                        <td>Instant REST + GraphQL</td>
+                        <td class="check highlight">Both</td>
+                        <td class="check">Both</td>
+                        <td class="cross">REST only</td>
+                        <td class="cross">GROQ only</td>
+                    </tr>
+                    <tr>
+                        <td>Multi-Site</td>
+                        <td class="check highlight">Built-in</td>
+                        <td class="cross">No</td>
+                        <td class="check">Spaces</td>
+                        <td class="check">Datasets</td>
+                    </tr>
+                    <tr>
+                        <td>Admin UX</td>
+                        <td class="highlight">Minimal &amp; Fast</td>
+                        <td>Functional</td>
+                        <td>Enterprise</td>
+                        <td>Developer-Heavy</td>
+                    </tr>
+                    <tr>
+                        <td>Webhook Signing + Retries</td>
+                        <td class="check highlight">Built-in</td>
+                        <td class="cross">Basic</td>
+                        <td class="check">Yes</td>
+                        <td class="cross">No</td>
+                    </tr>
+                    <tr>
+                        <td>Starting Price</td>
+                        <td class="highlight">Free forever</td>
+                        <td>Free / $29</td>
+                        <td>$300/mo</td>
+                        <td>Free / $99</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- PRICING -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <div class="section-header">
+                <p class="section-label">Pricing</p>
+                <h2 class="section-title">Self-host free. Scale when ready.</h2>
+                <p class="section-desc">The full CMS is free and open source. Our cloud handles the ops so you can focus on building.</p>
+            </div>
+            <div class="pricing-grid">
+                <div class="price-card">
+                    <h3>Free</h3>
+                    <div class="price-amount">$0</div>
+                    <p class="price-desc">Self-hosted, forever</p>
+                    <ul class="price-features">
+                        <li>All core features</li>
+                        <li>Unlimited content types</li>
+                        <li>REST + GraphQL APIs</li>
+                        <li>Multi-site support</li>
+                        <li>Community support</li>
+                    </ul>
+                    <a href="#" class="btn-price btn-price-ghost">Self-Host Guide</a>
+                </div>
+                <div class="price-card">
+                    <h3>Starter</h3>
+                    <div class="price-amount"><span class="currency">$</span>29<span class="period">/mo</span></div>
+                    <p class="price-desc">For small apps and blogs</p>
+                    <ul class="price-features">
+                        <li>Everything in Free</li>
+                        <li>1 space</li>
+                        <li>5,000 entries</li>
+                        <li>5 GB media storage</li>
+                        <li>Email support</li>
+                    </ul>
+                    <a href="#" class="btn-price btn-price-ghost">Get Started</a>
+                </div>
+                <div class="price-card featured">
+                    <h3>Growth</h3>
+                    <div class="price-amount"><span class="currency">$</span>99<span class="period">/mo</span></div>
+                    <p class="price-desc">For growing SaaS products</p>
+                    <ul class="price-features">
+                        <li>Everything in Starter</li>
+                        <li>5 spaces</li>
+                        <li>50,000 entries</li>
+                        <li>25 GB media storage</li>
+                        <li>Priority support</li>
+                    </ul>
+                    <a href="#" class="btn-price btn-price-primary">Get Started</a>
+                </div>
+                <div class="price-card">
+                    <h3>Scale</h3>
+                    <div class="price-amount"><span class="currency">$</span>299<span class="period">/mo</span></div>
+                    <p class="price-desc">For agencies and teams</p>
+                    <ul class="price-features">
+                        <li>Everything in Growth</li>
+                        <li>20 spaces</li>
+                        <li>500,000 entries</li>
+                        <li>100 GB media storage</li>
+                        <li>SSO + audit logs</li>
+                    </ul>
+                    <a href="#" class="btn-price btn-price-ghost">Contact Sales</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- OPEN SOURCE CTA -->
+    <section class="oss-cta">
+        <h2>Built in the open.<br>For <span style="color:var(--accent-light)">everyone</span>.</h2>
+        <p>HTMLess is MIT licensed. Read the source, fork it, self-host it, contribute to it. No vendor lock-in, ever.</p>
+        <div class="hero-actions">
+            <a href="#" class="btn btn-primary"><svg width="18" height="18" viewBox="0 0 16 16" fill="currentColor" style="margin-right:4px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg> Star on GitHub</a>
+            <a href="#" class="btn btn-ghost">Read the Docs</a>
+        </div>
+        <div class="hero-code mono" style="margin-top:2rem;max-width:520px;margin-left:auto;margin-right:auto;">
+            <span class="prompt">$</span> <span class="cmd">npx create-htmless my-cms</span><br>
+            <span class="prompt">$</span> <span class="cmd">cd my-cms && docker compose up</span><br>
+            <span style="color:var(--green);">&#10003;</span> <span style="color:var(--text-dim);">Admin UI at</span> <span style="color:var(--accent-light);">http://localhost:3001</span><br>
+            <span style="color:var(--green);">&#10003;</span> <span style="color:var(--text-dim);">API at</span> <span style="color:var(--accent-light);">http://localhost:3000/cda/v1</span>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <a href="/" class="nav-logo" style="font-size:1.5rem">HTML<span>ess</span></a>
+                <p>The open source headless CMS that doesn't suck. Built for developers, loved by editors.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Product</h4>
+                <a href="#features">Features</a>
+                <a href="#pricing">Pricing</a>
+                <a href="#compare">Compare</a>
+                <a href="#">Changelog</a>
+            </div>
+            <div class="footer-col">
+                <h4>Developers</h4>
+                <a href="#">Documentation</a>
+                <a href="#">API Reference</a>
+                <a href="#">Self-Host Guide</a>
+                <a href="#">GitHub</a>
+            </div>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <a href="#">Blog</a>
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+                <a href="#">Careers</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 HTMLess. MIT Licensed.</p>
+            <p>Crafted by <a href="https://webdesignerchicago.com" target="_blank" rel="noopener">Web Designer Chicago</a></p>
+        </div>
+    </footer>
+
+</body>
+</html>

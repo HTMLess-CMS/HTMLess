@@ -1,0 +1,23 @@
+{
+  "name": "htmless",
+  "version": "0.1.0",
+  "private": true,
+  "description": "The open source headless CMS that doesn't suck",
+  "license": "MIT",
+  "scripts": {
+    "dev": "docker compose up -d && pnpm --filter @htmless/core dev",
+    "dev:admin": "pnpm --filter @htmless/admin dev",
+    "dev:all": "docker compose up -d && pnpm -r --parallel dev",
+    "build": "pnpm -r build",
+    "db:migrate": "pnpm --filter @htmless/core prisma migrate dev",
+    "db:push": "pnpm --filter @htmless/core prisma db push",
+    "db:seed": "pnpm --filter @htmless/core prisma db seed",
+    "db:studio": "pnpm --filter @htmless/core prisma studio",
+    "lint": "pnpm -r lint",
+    "clean": "pnpm -r exec rm -rf node_modules dist .next .turbo"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9"
+  }
+}
