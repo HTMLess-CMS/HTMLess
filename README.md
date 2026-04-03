@@ -106,11 +106,7 @@ This separation keeps editorial operations safer while giving frontend teams a d
 ## Documentation
 
 - [CONTRIBUTING.md](CONTRIBUTING.md) — how to set up, code style, PR workflow
-- [docs/CONTRIBUTING-DEV.md](docs/CONTRIBUTING-DEV.md) — adding routes, migrations, Docker, troubleshooting
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — high-level system design
-- [docs/SPEC.md](docs/SPEC.md) — API and behavior contract
-- [docs/SECURITY.md](docs/SECURITY.md) — security decisions and operational concerns
-- [docs/ROADMAP.md](docs/ROADMAP.md) — current phases and planned features
+- [CONTRIBUTING-DEV.md](CONTRIBUTING-DEV.md) — adding routes, migrations, Docker, troubleshooting
 
 ## Why Install It Now
 
