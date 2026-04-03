@@ -2,11 +2,24 @@ import { Router } from 'express';
 import type { Router as IRouter } from 'express';
 import { createHash } from 'crypto';
 import { prisma } from '../../db.js';
-import { parseFields, parseInclude, projectFields } from '../../utils/query-shaping.js';
+import { parseFields, projectFields } from '../../utils/query-shaping.js';
+import {
+  getCachedResponse,
+  setCachedResponse,
+  buildCacheKey,
+} from '../../content/cache.js';
+import {
+  parseFilters,
+  parseSortDirectives,
+  applyFilters,
+  applySorting,
+} from '../../content/advanced-query.js';
 
 import type { Request, Response } from 'express';
 
 const router: IRouter = Router();
+
+const CACHE_TTL = 60; // seconds
 
 /**
  * Compute a weak ETag from a JSON-serialisable value.
@@ -17,58 +30,11 @@ function computeEtag(value: unknown): string {
 }
 
 /**
- * Resolve included references inside entry data.
- * Fetches related published entries for any reference field keys listed in `include`.
+ * Hash query parameters into a short, deterministic string for cache keys.
  */
-async function resolveIncludes(
-  data: Record<string, unknown>,
-  include: string[],
-  spaceId: string,
-): Promise<Record<string, unknown>> {
-  if (include.length === 0) return data;
-
-  const resolved = { ...data };
-
-  for (const key of include) {
-    const refValue = data[key];
-    if (!refValue) continue;
-
-    const refIds = Array.isArray(refValue) ? (refValue as string[]) : [refValue as string];
-
-    const entries = await prisma.entry.findMany({
-      where: {
-        spaceId,
-        id: { in: refIds },
-        state: {
-          status: 'published',
-          publishedVersionId: { not: null },
-        },
-      },
-      include: {
-        state: {
-          include: { publishedVersion: true },
-        },
-        contentType: { select: { key: true } },
-      },
-    });
-
-    const mapped = entries.map((entry) => ({
-      id: entry.id,
-      type: entry.contentType.key,
-      slug: entry.slug,
-      data: (entry.state!.publishedVersion!.data ?? {}) as Record<string, unknown>,
-      createdAt: entry.createdAt.toISOString(),
-      updatedAt: entry.updatedAt.toISOString(),
-    }));
-
-    if (Array.isArray(refValue)) {
-      resolved[key] = mapped;
-    } else {
-      resolved[key] = mapped[0] ?? null;
-    }
-  }
-
-  return resolved;
+function hashQuery(params: Record<string, unknown>): string {
+  const sorted = JSON.stringify(params, Object.keys(params).sort());
+  return createHash('md5').update(sorted).digest('hex').slice(0, 12);
 }
 
 // ── GET /content/:typeKey ────────────────────────────────────────────
@@ -83,64 +49,80 @@ router.get('/:typeKey', async (req: Request, res: Response): Promise<void> => {
   const slug = req.query.slug as string | undefined;
   const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string, 10) || 25));
-  const skip = (page - 1) * limit;
-
   const fields = parseFields(req.query.fields as string | undefined);
-  const include = parseInclude(req.query.include as string | undefined);
+  const sortParam = req.query.sort as string | undefined;
 
-  // Verify content type exists in this space
-  const contentType = await prisma.contentType.findUnique({
-    where: { spaceId_key: { spaceId, key: typeKey } },
-  });
+  // ── Redis cache check ──
+  const qHash = hashQuery({ ...req.query, page, limit });
+  const cacheKey = buildCacheKey(spaceId, typeKey, slug ?? 'list', qHash);
 
-  if (!contentType) {
-    res.status(404).json({ error: 'not_found', message: `Content type "${typeKey}" not found` });
+  const cached = await getCachedResponse(cacheKey);
+  if (cached) {
+    const parsed = JSON.parse(cached) as { etag: string; body: unknown };
+    const etag = parsed.etag;
+
+    if (req.headers['if-none-match'] === etag) {
+      res.status(304).end();
+      return;
+    }
+
+    res
+      .set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+      .set('ETag', etag)
+      .set('Surrogate-Key', `space:${spaceId} type:${typeKey}`)
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify(parsed.body));
     return;
   }
 
-  const where = {
+  // ── Parse advanced filters & sort ──
+  const filterConditions = parseFilters(req.query as Record<string, string>);
+  const sortDirectives = parseSortDirectives(sortParam);
+
+  // ── Query published_documents (single table, no joins) ──
+  const where: Record<string, unknown> = {
     spaceId,
-    contentTypeId: contentType.id,
-    state: {
-      status: 'published',
-      publishedVersionId: { not: null },
-    },
+    contentTypeKey: typeKey,
     ...(slug ? { slug } : {}),
   };
 
-  const [entries, total] = await Promise.all([
-    prisma.entry.findMany({
-      where,
-      include: {
-        state: {
-          include: { publishedVersion: true },
-        },
-      },
-      skip,
-      take: limit,
-      orderBy: { createdAt: 'desc' },
-    }),
-    prisma.entry.count({ where }),
-  ]);
+  const docs = await prisma.publishedDocument.findMany({
+    where,
+    orderBy: { publishedAt: 'desc' },
+  });
 
-  const items = await Promise.all(
-    entries.map(async (entry) => {
-      const rawData = (entry.state!.publishedVersion!.data ?? {}) as Record<string, unknown>;
-      let data = projectFields(rawData, fields);
-      data = await resolveIncludes(data, include, spaceId);
-      return {
-        id: entry.id,
-        type: typeKey,
-        slug: entry.slug,
-        data,
-        createdAt: entry.createdAt.toISOString(),
-        updatedAt: entry.updatedAt.toISOString(),
-      };
-    }),
-  );
+  // ── Apply in-memory filters ──
+  let items = docs.map((doc) => ({
+    id: doc.entryId,
+    type: doc.contentTypeKey,
+    slug: doc.slug,
+    data: (doc.data ?? {}) as Record<string, unknown>,
+    publishedAt: doc.publishedAt.toISOString(),
+    updatedAt: doc.updatedAt.toISOString(),
+  }));
+
+  if (filterConditions.length > 0) {
+    items = items.filter((item) => applyFilters(filterConditions, item.data));
+  }
+
+  // ── Apply sorting ──
+  if (sortDirectives.length > 0) {
+    items = applySorting(items, sortDirectives);
+  }
+
+  // ── Pagination (post-filter) ──
+  const total = items.length;
+  const skip = (page - 1) * limit;
+  const paged = items.slice(skip, skip + limit);
+
+  // ── Field projection ──
+  const projected = paged.map((item) => ({
+    ...item,
+    data: projectFields(item.data, fields),
+  }));
 
   const body = {
-    items,
+    items: projected,
     pagination: {
       page,
       limit,
@@ -151,14 +133,19 @@ router.get('/:typeKey', async (req: Request, res: Response): Promise<void> => {
 
   const etag = computeEtag(body);
 
+  // ── ETag match ──
   if (req.headers['if-none-match'] === etag) {
     res.status(304).end();
     return;
   }
 
+  // ── Cache the response ──
+  setCachedResponse(cacheKey, JSON.stringify({ etag, body }), CACHE_TTL).catch(() => {});
+
   res
-    .set('Cache-Control', 'public, max-age=60')
+    .set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
     .set('ETag', etag)
+    .set('Surrogate-Key', `space:${spaceId} type:${typeKey}`)
     .json(body);
 });
 
@@ -173,63 +160,71 @@ router.get('/:typeKey/:id', async (req: Request, res: Response): Promise<void> =
   const typeKey = req.params.typeKey as string;
   const id = req.params.id as string;
   const fields = parseFields(req.query.fields as string | undefined);
-  const include = parseInclude(req.query.include as string | undefined);
 
-  // Verify content type
-  const contentType = await prisma.contentType.findUnique({
-    where: { spaceId_key: { spaceId, key: typeKey } },
-  });
+  // ── Redis cache check ──
+  const qHash = hashQuery({ fields: req.query.fields });
+  const cacheKey = buildCacheKey(spaceId, typeKey, id, qHash);
 
-  if (!contentType) {
-    res.status(404).json({ error: 'not_found', message: `Content type "${typeKey}" not found` });
+  const cached = await getCachedResponse(cacheKey);
+  if (cached) {
+    const parsed = JSON.parse(cached) as { etag: string; body: unknown };
+    const etag = parsed.etag;
+
+    if (req.headers['if-none-match'] === etag) {
+      res.status(304).end();
+      return;
+    }
+
+    res
+      .set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
+      .set('ETag', etag)
+      .set('Surrogate-Key', `space:${spaceId} type:${typeKey} entry:${id}`)
+      .set('Content-Type', 'application/json')
+      .send(JSON.stringify(parsed.body));
     return;
   }
 
-  const entry = await prisma.entry.findFirst({
+  // ── Single-row lookup from published_documents ──
+  const doc = await prisma.publishedDocument.findFirst({
     where: {
-      id,
       spaceId,
-      contentTypeId: contentType.id,
-      state: {
-        status: 'published',
-        publishedVersionId: { not: null },
-      },
-    },
-    include: {
-      state: {
-        include: { publishedVersion: true },
-      },
+      contentTypeKey: typeKey,
+      entryId: id,
     },
   });
 
-  if (!entry) {
+  if (!doc) {
     res.status(404).json({ error: 'not_found', message: 'Entry not found or not published' });
     return;
   }
 
-  const rawData = (entry.state!.publishedVersion!.data ?? {}) as Record<string, unknown>;
-  let data = projectFields(rawData, fields);
-  data = await resolveIncludes(data, include, spaceId);
+  const rawData = (doc.data ?? {}) as Record<string, unknown>;
+  const data = projectFields(rawData, fields);
 
   const body = {
-    id: entry.id,
-    type: typeKey,
-    slug: entry.slug,
+    id: doc.entryId,
+    type: doc.contentTypeKey,
+    slug: doc.slug,
     data,
-    createdAt: entry.createdAt.toISOString(),
-    updatedAt: entry.updatedAt.toISOString(),
+    publishedAt: doc.publishedAt.toISOString(),
+    updatedAt: doc.updatedAt.toISOString(),
   };
 
   const etag = computeEtag(body);
 
+  // ── ETag match ──
   if (req.headers['if-none-match'] === etag) {
     res.status(304).end();
     return;
   }
 
+  // ── Cache the response ──
+  setCachedResponse(cacheKey, JSON.stringify({ etag, body }), CACHE_TTL).catch(() => {});
+
   res
-    .set('Cache-Control', 'public, max-age=60')
+    .set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
     .set('ETag', etag)
+    .set('Surrogate-Key', `space:${spaceId} type:${typeKey} entry:${id}`)
     .json(body);
 });
 

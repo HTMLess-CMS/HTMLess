@@ -23,8 +23,9 @@ model Space {
   previewTokens PreviewToken[]
   webhooks     Webhook[]
   roleBindings     RoleBinding[]
-  blockDefinitions BlockDefinition[]
-  patterns         Pattern[]
+  publishedDocuments PublishedDocument[]
+  blockDefinitions   BlockDefinition[]
+  patterns           Pattern[]
   auditLogs        AuditLog[]
 
   @@map("spaces")
@@ -231,6 +232,28 @@ model Asset {
   space  Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
 
   @@map("assets")
+}
+
+// ─── Denormalized Read Model (CDA Performance) ───
+
+model PublishedDocument {
+  id              String   @id @default(cuid())
+  spaceId         String
+  entryId         String   @unique
+  contentTypeKey  String
+  slug            String
+  data            Json     // Pre-resolved JSON with references expanded
+  publishedAt     DateTime
+  etag            String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, contentTypeKey, slug])
+  @@index([spaceId, contentTypeKey])
+  @@index([spaceId, slug])
+  @@map("published_documents")
 }
 
 // ─── Blocks ───

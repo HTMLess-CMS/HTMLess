@@ -4,6 +4,8 @@ import { nanoid } from 'nanoid';
 import { prisma } from '../../db.js';
 import { requireScope } from '../../auth/middleware.js';
 import { validateEntryData, validateForPublish } from '../../schema/validator.js';
+import { materializeEntry, dematerializeEntry } from '../../content/materializer.js';
+import { invalidateByType } from '../../content/cache.js';
 
 const router: IRouter = Router();
 
@@ -458,6 +460,21 @@ router.post('/:id/publish', requireScope('cma:write'), async (req, res) => {
     return newVersion;
   });
 
+  // Materialize the entry into the published_documents read model and
+  // invalidate the CDA cache for this content type (fire-and-forget to
+  // avoid blocking the response).
+  const contentTypeKey = (
+    await prisma.contentType.findUnique({
+      where: { id: entry.contentTypeId },
+      select: { key: true },
+    })
+  )?.key;
+
+  materializeEntry(entry.id).catch(() => {});
+  if (contentTypeKey) {
+    invalidateByType(spaceId!, contentTypeKey).catch(() => {});
+  }
+
   res.set('ETag', `"${publishedVersion.etag}"`);
 
   res.json({
@@ -505,6 +522,19 @@ router.post('/:id/unpublish', requireScope('cma:write'), async (req, res) => {
     // Touch entry updatedAt
     await tx.entry.update({ where: { id: entry.id }, data: {} });
   });
+
+  // Remove from published_documents and invalidate cache
+  const contentTypeKey = (
+    await prisma.contentType.findUnique({
+      where: { id: entry.contentTypeId },
+      select: { key: true },
+    })
+  )?.key;
+
+  dematerializeEntry(entry.id).catch(() => {});
+  if (contentTypeKey) {
+    invalidateByType(spaceId!, contentTypeKey).catch(() => {});
+  }
 
   res.json({
     id: entry.id,

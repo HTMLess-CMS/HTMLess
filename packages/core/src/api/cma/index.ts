@@ -4,6 +4,7 @@ import { authenticate } from '../../auth/middleware.js';
 import { requirePermission } from '../../auth/rbac.js';
 import { auditMiddleware } from '../../audit/middleware.js';
 import authRouter from './auth.js';
+import liveRouter from './live.js';
 import schemasRouter from './schemas.js';
 import entriesRouter from './entries.js';
 import assetsRouter from './assets.js';
@@ -21,7 +22,10 @@ const router: IRouter = Router();
 router.use('/auth', authRouter);
 
 // Everything below requires authentication
-router.use(authenticate());
+router.use(authenticate({ allowQueryToken: true }));
+
+// SSE live updates — mounted before audit middleware (read-only stream)
+router.use('/live', liveRouter);
 
 // Audit logging for all CMA write operations
 router.use(auditMiddleware());

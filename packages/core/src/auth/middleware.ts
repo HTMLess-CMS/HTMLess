@@ -25,13 +25,16 @@ function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');
 }
 
-export function authenticate(options: { required?: boolean; allowPreview?: boolean } = {}) {
-  const { required = true, allowPreview = false } = options;
+export function authenticate(options: { required?: boolean; allowPreview?: boolean; allowQueryToken?: boolean } = {}) {
+  const { required = true, allowPreview = false, allowQueryToken = false } = options;
 
   return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     const authHeader = req.headers.authorization;
 
-    if (!authHeader) {
+    // Support ?token= query param for SSE (EventSource can't set headers)
+    const queryToken = allowQueryToken ? (req.query['token'] as string | undefined) : undefined;
+
+    if (!authHeader && !queryToken) {
       if (required) {
         res.status(401).json({ error: 'authentication_required', message: 'Bearer token required' });
         return;
@@ -40,7 +43,7 @@ export function authenticate(options: { required?: boolean; allowPreview?: boole
       return;
     }
 
-    const token = authHeader.replace('Bearer ', '');
+    const token = queryToken ?? authHeader!.replace('Bearer ', '');
 
     // Try API token (hle_ prefix)
     if (token.startsWith('hle_')) {
