@@ -2,12 +2,12 @@
 
 [![CI](https://github.com/HTMLess-CMS/HTMLess/actions/workflows/ci.yml/badge.svg)](https://github.com/HTMLess-CMS/HTMLess/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/version-0.1.0-orange.svg)](package.json)
+[![npm](https://img.shields.io/npm/v/@htmless/core?label=@htmless/core&color=cb3837)](https://www.npmjs.com/package/@htmless/core)
+[![npm](https://img.shields.io/npm/v/@htmless/sdk?label=@htmless/sdk&color=cb3837)](https://www.npmjs.com/package/@htmless/sdk)
+[![Docker](https://img.shields.io/badge/Docker_Hub-poorman/htmless--api-2496ED?logo=docker&logoColor=white)](https://hub.docker.com/r/poorman/htmless-api)
 [![Website](https://img.shields.io/badge/Website-htmless.com-111827?logo=googlechrome&logoColor=white)](https://htmless.com)
 
-[Website](https://htmless.com) · [Roadmap](docs/ROADMAP.md) · [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) · [Developer Guide](CONTRIBUTING-DEV.md)
-
-Live site: https://htmless.com
+[Website](https://htmless.com) · [Contributing](CONTRIBUTING.md) · [Developer Guide](CONTRIBUTING-DEV.md)
 
 HTMLess is an open source headless CMS for developers, designers, editors, and agencies who want structured content, clean APIs, and Docker-first self-hosting without getting trapped in a bloated platform.
 
@@ -108,12 +108,11 @@ This separation keeps editorial operations safer while giving frontend teams a d
 
 ## Documentation
 
-- [docs/ROADMAP.md](docs/ROADMAP.md) for current product phases and missing capabilities
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the high-level system design
-- [docs/SPEC.md](docs/SPEC.md) for the API and behavior contract
-- [docs/SECURITY.md](docs/SECURITY.md) for security decisions and operational concerns
-- [CONTRIBUTING.md](CONTRIBUTING.md) for setup, code style, and pull request workflow
-- [CONTRIBUTING-DEV.md](CONTRIBUTING-DEV.md) for routes, migrations, Docker, testing, and troubleshooting
+- [CONTRIBUTING.md](CONTRIBUTING.md) — setup, code style, pull request workflow
+- [CONTRIBUTING-DEV.md](CONTRIBUTING-DEV.md) — adding routes, migrations, Docker, testing
+- [CDA-CONTRACT.md](CDA-CONTRACT.md) — CDA response format, cache headers, invalidation events
+- [V1-RELEASE-CHECKLIST.md](V1-RELEASE-CHECKLIST.md) — release blocking items
+- [Docs Portal](https://htmless.com/docs/) — full API reference with examples
 
 ## Why Install It Now
 
@@ -147,6 +146,14 @@ curl -sL https://raw.githubusercontent.com/HTMLess-CMS/HTMLess/main/docker/docke
 docker compose up -d
 ```
 
+Docker Hub images:
+
+| Image | Pull |
+| --- | --- |
+| [poorman/htmless-api](https://hub.docker.com/r/poorman/htmless-api) | `docker pull poorman/htmless-api` |
+| [poorman/htmless-admin](https://hub.docker.com/r/poorman/htmless-admin) | `docker pull poorman/htmless-admin` |
+| [poorman/htmless-worker](https://hub.docker.com/r/poorman/htmless-worker) | `docker pull poorman/htmless-worker` |
+
 ### 1-Click Cloud Deploy
 
 | Platform | What It Deploys | Link |
@@ -161,9 +168,9 @@ See the [deploy/](deploy/) directory for platform-specific guides.
 ### npm Packages
 
 ```bash
-npm install @htmless/core    # API server and CLI
-npm install htmless           # TypeScript SDK
-npx create-htmless my-cms    # Project scaffolder
+npm install @htmless/core    # Full CMS API server + CLI
+npm install @htmless/sdk     # TypeScript SDK for frontends
+npx create-htmless my-cms   # Project scaffolder (creates docker-compose + .env)
 ```
 
 ## License

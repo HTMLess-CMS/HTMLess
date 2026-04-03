@@ -2,20 +2,21 @@ FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies for both worker and core (for Prisma)
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/worker/package.json packages/worker/
 COPY packages/core/package.json packages/core/
-RUN pnpm install --frozen-lockfile --filter @htmless/worker
+RUN pnpm install --frozen-lockfile --filter @htmless/worker --filter @htmless/core
 
-# Copy source
+# Copy source + generate Prisma client
 COPY packages/worker/ packages/worker/
 COPY packages/core/prisma packages/core/prisma
 COPY tsconfig.base.json ./
-RUN pnpm --filter @htmless/core prisma generate
+RUN cd packages/core && npx prisma generate
 
 # Production image
 FROM node:20-alpine
+RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 COPY --from=base /app/node_modules ./node_modules
@@ -25,4 +26,4 @@ COPY --from=base /app/package.json ./
 COPY --from=base /app/pnpm-workspace.yaml ./
 
 ENV NODE_ENV=production
-CMD ["node", "--loader", "tsx", "packages/worker/src/index.ts"]
+CMD ["node", "--import", "tsx", "packages/worker/src/index.ts"]
