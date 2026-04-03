@@ -44,6 +44,7 @@
             --amber: #f59e0b;
         }
         html { scroll-behavior: smooth; }
+        section[id] { scroll-margin-top: 84px; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg);
@@ -159,6 +160,7 @@
             margin-top: 3rem; background: var(--bg-surface); border: 1px solid var(--border);
             border-radius: 10px; padding: 1.25rem 1.75rem; text-align: left;
             font-size: 0.9rem; color: var(--text-muted); max-width: 500px; margin-left: auto; margin-right: auto;
+            overflow-wrap: anywhere;
         }
         .hero-code .prompt { color: var(--accent-light); }
         .hero-code .cmd { color: var(--text); }
@@ -306,10 +308,17 @@
 
         /* ── COMPARISON ── */
         .comparison { background: var(--bg); }
+        .comp-table-wrap {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 12px;
+        }
         .comp-table {
             width: 100%; border-collapse: collapse;
             background: var(--bg-surface); border-radius: 12px; overflow: hidden;
             border: 1px solid var(--border);
+            min-width: 760px;
         }
         .comp-table th, .comp-table td {
             padding: 1rem 1.5rem; text-align: left; font-size: 0.875rem;
@@ -416,14 +425,103 @@
             .footer-inner { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 768px) {
+            section[id] { scroll-margin-top: 72px; }
+            nav { height: 60px; }
+            .nav-inner { padding: 0 1rem; }
             .nav-links { display: none; }
             .hamburger { display: flex; }
+            .nav-cta { display: none; }
+            .mobile-menu { top: 60px; }
+            .mobile-menu a { padding: 0.9rem 1.25rem; }
+            section { padding: 4.25rem 1.25rem; }
+            .hero {
+                min-height: auto;
+                padding: 6.5rem 1.25rem 4rem;
+            }
+            .hero-desc {
+                font-size: 1rem;
+                margin-bottom: 1.75rem;
+            }
+            .hero-actions {
+                flex-direction: column;
+                align-items: stretch;
+                width: 100%;
+                max-width: 320px;
+                margin: 0 auto;
+            }
+            .hero-actions .btn {
+                justify-content: center;
+                width: 100%;
+            }
+            .hero-audience {
+                gap: 0.5rem;
+            }
+            .hero-audience span {
+                justify-content: center;
+                width: 100%;
+            }
+            .hero-code {
+                margin-top: 2rem;
+                padding: 1rem 1.1rem;
+                font-size: 0.82rem;
+            }
+            .section-header {
+                margin-bottom: 2.5rem;
+            }
+            .section-desc {
+                font-size: 0.98rem;
+            }
+            .audience-card,
+            .feature-card,
+            .price-card {
+                padding: 1.4rem;
+            }
             .features-grid { grid-template-columns: 1fr; }
             .steps { grid-template-columns: 1fr; gap: 1.5rem; }
             .pricing-grid { grid-template-columns: 1fr; }
             .footer-inner { grid-template-columns: 1fr; }
+            .code-header {
+                padding: 0.7rem 1rem;
+            }
+            .code-filename {
+                margin-left: 0.35rem;
+                font-size: 0.7rem;
+            }
+            .code-body {
+                padding: 1rem;
+                font-size: 0.74rem;
+                line-height: 1.6;
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            .comp-table-wrap {
+                margin: 0 -0.25rem;
+            }
             .comp-table { font-size: 0.8rem; }
             .comp-table th, .comp-table td { padding: 0.75rem; }
+            .price-card.featured::before {
+                top: -10px;
+            }
+            .footer-bottom {
+                flex-direction: column;
+                gap: 0.65rem;
+                text-align: center;
+            }
+        }
+        @media (max-width: 480px) {
+            .hero-badge {
+                width: 100%;
+                justify-content: center;
+            }
+            .hero h1 {
+                font-size: 2.35rem;
+            }
+            .section-title {
+                font-size: 1.8rem;
+            }
+            .price-amount {
+                font-size: 2.1rem;
+            }
         }
     </style>
 
@@ -683,6 +781,7 @@
                 <p class="section-label">Comparison</p>
                 <h2 class="section-title">Why teams pick HTMLess</h2>
             </div>
+            <div class="comp-table-wrap">
             <table class="comp-table">
                 <thead>
                     <tr>
@@ -759,6 +858,7 @@
                     </tr>
                 </tbody>
             </table>
+            </div>
         </div>
     </section>
 

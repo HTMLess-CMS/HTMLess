@@ -52,14 +52,14 @@ Build the cleanest, fastest headless CMS that makes Strapi look bloated. Open so
 ## Phase 4 — Structured Content Blocks
 > Goal: Block registry, validation, patterns, portable rich content
 
-- [ ] Block definition registry (key, version, attributesSchema)
-- [ ] Block validation on entry save
-- [ ] Block versioning strategy (pin/migrate/deprecate)
-- [ ] Reusable patterns/templates
-- [ ] Core blocks: paragraph, heading, image, callout, embed, list, code
+- [x] Block definition registry (key, version, attributesSchema)
+- [x] Block validation on entry save
+- [x] Block versioning strategy (pin/migrate/deprecate)
+- [x] Reusable patterns/templates
+- [x] Core blocks: paragraph, heading, image, callout, embed, list, code
 - [ ] Admin UI: block-based content editor
 - [ ] Admin UI: pattern picker
-- [ ] Renderer SDK contract (block → component mapping)
+- [x] Renderer SDK contract (block → component mapping)
 
 ## Phase 5 — Integrations & Extensibility
 > Goal: Event bus, webhooks, custom endpoints, plugin system

@@ -22,8 +22,10 @@ model Space {
   apiTokens    ApiToken[]
   previewTokens PreviewToken[]
   webhooks     Webhook[]
-  roleBindings RoleBinding[]
-  auditLogs    AuditLog[]
+  roleBindings     RoleBinding[]
+  blockDefinitions BlockDefinition[]
+  patterns         Pattern[]
+  auditLogs        AuditLog[]
 
   @@map("spaces")
 }
@@ -229,6 +231,43 @@ model Asset {
   space  Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
 
   @@map("assets")
+}
+
+// ─── Blocks ───
+
+model BlockDefinition {
+  id               String   @id @default(cuid())
+  spaceId          String
+  key              String   // "paragraph", "heading", "image", "callout"
+  version          String   @default("1.0.0")
+  title            String
+  description      String?
+  icon             String?  // emoji or icon identifier
+  attributesSchema Json     // JSON Schema for block attributes
+  allowedChildren  Json?    // array of block keys allowed as children, null = any
+  builtIn          Boolean  @default(false) // core blocks shipped with HTMLess
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, key, version])
+  @@map("block_definitions")
+}
+
+model Pattern {
+  id          String   @id @default(cuid())
+  spaceId     String
+  title       String
+  description String?
+  blockTree   Json     // array of BlockInstance objects
+  typeKeys    Json?    // content type keys this pattern applies to, null = any
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@map("patterns")
 }
 
 // ─── Webhooks ───

@@ -8,6 +8,7 @@ import entriesRouter from './entries.js';
 import assetsRouter from './assets.js';
 import uploadsRouter from './uploads.js';
 import webhooksRouter from './webhooks.js';
+import blocksRouter from './blocks.js';
 
 const router: IRouter = Router();
 
@@ -23,5 +24,6 @@ router.use('/entries', requirePermission('entry.read', 'entry.create'), entriesR
 router.use('/assets', requirePermission('asset.upload', 'entry.read'), assetsRouter);
 router.use('/uploads', requirePermission('asset.upload'), uploadsRouter);
 router.use('/webhooks', requirePermission('webhook.manage'), webhooksRouter);
+router.use('/blocks', requirePermission('schema.admin', 'entry.read'), blocksRouter);
 
 export default router;
