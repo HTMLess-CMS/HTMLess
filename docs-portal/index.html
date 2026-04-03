@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTMLess Docs — Developer Documentation</title>
+    <meta name="description" content="Complete developer documentation for HTMLess, the open source headless CMS. REST API, GraphQL, SDK, self-hosting, CLI, and more.">
+    <meta name="theme-color" content="#09090b">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --bg: #09090b;
+            --bg-surface: #18181b;
+            --bg-elevated: #27272a;
+            --border: #27272a;
+            --border-subtle: #1e1e22;
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dim: #71717a;
+            --accent: #6366f1;
+            --accent-light: #818cf8;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --green: #22c55e;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --pink: #ec4899;
+            --cyan: #06b6d4;
+            --sidebar-w: 280px;
+            --header-h: 56px;
+        }
+
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        code, pre, .mono { font-family: 'JetBrains Mono', monospace; }
+
+        /* ── Header ── */
+        .doc-header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            height: var(--header-h);
+            background: rgba(9, 9, 11, 0.85);
+            backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex; align-items: center; padding: 0 1.5rem;
+        }
+        .doc-header-inner {
+            display: flex; align-items: center; justify-content: space-between;
+            width: 100%; max-width: 100%;
+        }
+        .doc-logo {
+            font-size: 1.1rem; font-weight: 800; color: var(--text);
+            text-decoration: none; letter-spacing: -0.03em;
+            display: flex; align-items: center; gap: 0.6rem;
+        }
+        .doc-logo span { color: var(--accent); }
+        .doc-logo-tag {
+            font-size: 0.65rem; font-weight: 600; color: var(--accent-light);
+            background: var(--accent-glow); padding: 0.15rem 0.5rem;
+            border-radius: 4px; letter-spacing: 0.04em; text-transform: uppercase;
+        }
+        .doc-header-links { display: flex; gap: 1.25rem; align-items: center; }
+        .doc-header-links a {
+            color: var(--text-muted); text-decoration: none; font-size: 0.8rem;
+            font-weight: 500; transition: color 0.15s;
+        }
+        .doc-header-links a:hover { color: var(--text); }
+        .hamburger-btn {
+            display: none; background: none; border: none; cursor: pointer;
+            padding: 6px; color: var(--text);
+        }
+        .hamburger-btn svg { display: block; }
+
+        /* ── Sidebar ── */
+        .doc-sidebar {
+            position: fixed; top: var(--header-h); left: 0; bottom: 0;
+            width: var(--sidebar-w); overflow-y: auto;
+            background: var(--bg); border-right: 1px solid var(--border-subtle);
+            padding: 1.25rem 0; z-index: 50;
+            scrollbar-width: thin; scrollbar-color: var(--bg-elevated) transparent;
+        }
+        .doc-sidebar::-webkit-scrollbar { width: 4px; }
+        .doc-sidebar::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 4px; }
+
+        .sidebar-section { margin-bottom: 0.25rem; }
+        .sidebar-section-title {
+            font-size: 0.65rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.08em; color: var(--text-dim);
+            padding: 0.5rem 1.5rem 0.35rem; user-select: none;
+        }
+        .sidebar-link {
+            display: block; padding: 0.4rem 1.5rem; font-size: 0.82rem;
+            color: var(--text-muted); text-decoration: none; font-weight: 450;
+            transition: all 0.12s; border-left: 2px solid transparent;
+        }
+        .sidebar-link:hover {
+            color: var(--text); background: rgba(99, 102, 241, 0.05);
+        }
+        .sidebar-link.active {
+            color: var(--accent-light); background: rgba(99, 102, 241, 0.08);
+            border-left-color: var(--accent); font-weight: 550;
+        }
+
+        /* ── Main content ── */
+        .doc-main {
+            margin-left: var(--sidebar-w); margin-top: var(--header-h);
+            min-height: calc(100vh - var(--header-h));
+            padding: 2.5rem 3rem 4rem;
+            max-width: 900px;
+        }
+
+        /* ── Section containers ── */
+        .doc-section { display: none; }
+        .doc-section.active { display: block; }
+
+        /* ── Typography ── */
+        .doc-section h1 {
+            font-size: 2rem; font-weight: 800; letter-spacing: -0.03em;
+            margin-bottom: 0.75rem; line-height: 1.2;
+        }
+        .doc-section h2 {
+            font-size: 1.35rem; font-weight: 700; letter-spacing: -0.02em;
+            margin: 2.5rem 0 0.75rem; padding-bottom: 0.5rem;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .doc-section h3 {
+            font-size: 1.05rem; font-weight: 650;
+            margin: 1.75rem 0 0.5rem; color: var(--text);
+        }
+        .doc-section p {
+            color: var(--text-muted); margin-bottom: 1rem; font-size: 0.9rem;
+            line-height: 1.75;
+        }
+        .doc-section ul, .doc-section ol {
+            color: var(--text-muted); margin: 0 0 1rem 1.5rem; font-size: 0.9rem;
+        }
+        .doc-section li { margin-bottom: 0.35rem; }
+        .doc-section a { color: var(--accent-light); text-decoration: none; }
+        .doc-section a:hover { text-decoration: underline; }
+
+        .lead {
+            font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem;
+            line-height: 1.7;
+        }
+
+        /* ── Inline code ── */
+        .doc-section code:not(pre code) {
+            background: var(--bg-elevated); color: var(--accent-light);
+            padding: 0.15em 0.4em; border-radius: 4px; font-size: 0.82em;
+            font-weight: 500;
+        }
+
+        /* ── Code blocks ── */
+        .code-block {
+            position: relative; margin: 1rem 0 1.5rem;
+            background: #18181b; border: 1px solid var(--border);
+            border-radius: 10px; overflow: hidden;
+        }
+        .code-block-header {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 0.5rem 1rem; background: #111113;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.7rem; font-weight: 600; color: var(--text-dim);
+            text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .copy-btn {
+            background: none; border: 1px solid var(--border); border-radius: 4px;
+            color: var(--text-dim); font-size: 0.65rem; padding: 0.2rem 0.5rem;
+            cursor: pointer; font-family: inherit; transition: all 0.15s;
+        }
+        .copy-btn:hover { color: var(--text); border-color: var(--text-dim); }
+        .code-block pre {
+            padding: 1rem 1.25rem; overflow-x: auto; font-size: 0.8rem;
+            line-height: 1.65; color: #e4e4e7;
+            scrollbar-width: thin; scrollbar-color: var(--bg-elevated) transparent;
+        }
+        .code-block pre::-webkit-scrollbar { height: 4px; }
+        .code-block pre::-webkit-scrollbar-thumb { background: var(--bg-elevated); border-radius: 4px; }
+
+        /* Syntax coloring */
+        .hl-key { color: #818cf8; }
+        .hl-str { color: #22c55e; }
+        .hl-num { color: #f59e0b; }
+        .hl-method { color: #f59e0b; }
+        .hl-comment { color: #52525b; font-style: italic; }
+        .hl-keyword { color: #c084fc; }
+        .hl-type { color: #06b6d4; }
+        .hl-fn { color: #60a5fa; }
+        .hl-prop { color: #818cf8; }
+        .hl-punct { color: #71717a; }
+        .hl-url { color: #22d3ee; }
+        .hl-header { color: #a78bfa; }
+        .hl-bool { color: #f59e0b; }
+        .hl-null { color: #ef4444; }
+
+        /* ── Tables ── */
+        .doc-table {
+            width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem;
+            font-size: 0.82rem;
+        }
+        .doc-table th {
+            text-align: left; padding: 0.6rem 0.85rem;
+            background: var(--bg-surface); color: var(--text-dim);
+            font-weight: 600; font-size: 0.72rem; text-transform: uppercase;
+            letter-spacing: 0.05em; border-bottom: 1px solid var(--border);
+        }
+        .doc-table td {
+            padding: 0.55rem 0.85rem; border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+        }
+        .doc-table tr:last-child td { border-bottom: none; }
+        .doc-table code {
+            background: var(--bg-elevated); padding: 0.1em 0.35em;
+            border-radius: 3px; font-size: 0.78em; color: var(--accent-light);
+        }
+
+        /* ── Callout boxes ── */
+        .callout {
+            border-radius: 8px; padding: 1rem 1.25rem; margin: 1rem 0 1.5rem;
+            font-size: 0.85rem; line-height: 1.6;
+        }
+        .callout-title {
+            font-weight: 650; font-size: 0.8rem; margin-bottom: 0.3rem;
+            display: flex; align-items: center; gap: 0.4rem;
+        }
+        .callout-info {
+            background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.2);
+            color: var(--text-muted);
+        }
+        .callout-info .callout-title { color: var(--accent-light); }
+        .callout-warn {
+            background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.2);
+            color: var(--text-muted);
+        }
+        .callout-warn .callout-title { color: var(--amber); }
+        .callout-tip {
+            background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2);
+            color: var(--text-muted);
+        }
+        .callout-tip .callout-title { color: var(--green); }
+
+        /* ── Method badges ── */
+        .badge {
+            display: inline-block; padding: 0.12em 0.45em; border-radius: 4px;
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.04em;
+            font-family: 'JetBrains Mono', monospace; vertical-align: middle;
+        }
+        .badge-get { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+        .badge-post { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+        .badge-patch { background: rgba(245, 158, 11, 0.15); color: #f59e0b; }
+        .badge-delete { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+
+        /* ── Endpoint rows ── */
+        .endpoint-row {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.5rem 0; border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.82rem;
+        }
+        .endpoint-row:last-child { border-bottom: none; }
+        .endpoint-path {
+            font-family: 'JetBrains Mono', monospace; font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+        .endpoint-desc { color: var(--text-dim); font-size: 0.78rem; margin-left: auto; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .doc-sidebar {
+                transform: translateX(-100%); transition: transform 0.25s ease;
+                z-index: 200; width: 280px; background: var(--bg);
+            }
+            .doc-sidebar.open { transform: translateX(0); }
+            .doc-main { margin-left: 0; padding: 2rem 1.5rem 3rem; }
+            .hamburger-btn { display: block; }
+            .sidebar-overlay {
+                display: none; position: fixed; inset: 0; z-index: 150;
+                background: rgba(0,0,0,0.6);
+            }
+            .sidebar-overlay.open { display: block; }
+        }
+        @media (max-width: 600px) {
+            .doc-main { padding: 1.5rem 1rem 2rem; }
+            .doc-section h1 { font-size: 1.6rem; }
+            .doc-section h2 { font-size: 1.15rem; }
+            .code-block pre { font-size: 0.72rem; padding: 0.75rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="doc-header">
+    <div class="doc-header-inner">
+        <div style="display:flex;align-items:center;gap:1rem;">
+            <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Toggle navigation">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="3" y1="5" x2="17" y2="5"/><line x1="3" y1="10" x2="17" y2="10"/><line x1="3" y1="15" x2="17" y2="15"/>
+                </svg>
+            </button>
+            <a href="/" class="doc-logo">HTML<span>ess</span> <span class="doc-logo-tag">Docs</span></a>
+        </div>
+        <div class="doc-header-links">
+            <a href="/">Home</a>
+            <a href="https://github.com/pbieda/htmless" target="_blank">GitHub</a>
+        </div>
+    </div>
+</header>
+
+<!-- Mobile overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- Sidebar -->
+<aside class="doc-sidebar" id="sidebar">
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Introduction</div>
+        <a class="sidebar-link active" href="#getting-started" data-section="getting-started">Getting Started</a>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Core API</div>
+        <a class="sidebar-link" href="#api-reference" data-section="api-reference">API Reference</a>
+        <a class="sidebar-link" href="#authentication" data-section="authentication">Authentication</a>
+        <a class="sidebar-link" href="#graphql" data-section="graphql">GraphQL</a>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Content</div>
+        <a class="sidebar-link" href="#content-modeling" data-section="content-modeling">Content Modeling</a>
+        <a class="sidebar-link" href="#content-workflow" data-section="content-workflow">Content Workflow</a>
+        <a class="sidebar-link" href="#blocks" data-section="blocks">Blocks &amp; Patterns</a>
+        <a class="sidebar-link" href="#media" data-section="media">Media</a>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Integration</div>
+        <a class="sidebar-link" href="#webhooks" data-section="webhooks">Webhooks</a>
+        <a class="sidebar-link" href="#sdk" data-section="sdk">TypeScript SDK</a>
+    </div>
+    <div class="sidebar-section">
+        <div class="sidebar-section-title">Operations</div>
+        <a class="sidebar-link" href="#self-hosting" data-section="self-hosting">Self-Hosting</a>
+        <a class="sidebar-link" href="#cli" data-section="cli">CLI</a>
+    </div>
+</aside>
+
+<!-- Main -->
+<main class="doc-main">
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  GETTING STARTED                                              ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section active" id="getting-started">
+    <h1>Getting Started</h1>
+    <p class="lead">Go from zero to a running HTMLess instance with content in under five minutes. All you need is Docker.</p>
+
+    <h2>Quick Start with Docker</h2>
+    <p>The fastest way to run HTMLess locally is with Docker Compose. This spins up the API, admin UI, PostgreSQL, and Redis in one command.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Terminal<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment"># Clone the repo</span>
+git clone https://github.com/pbieda/htmless.git
+<span class="hl-keyword">cd</span> htmless
+
+<span class="hl-comment"># Start everything</span>
+docker compose up -d
+
+<span class="hl-comment"># API is now at http://localhost:3000</span>
+<span class="hl-comment"># Admin UI at  http://localhost:3001</span></pre>
+    </div>
+
+    <div class="callout callout-info">
+        <div class="callout-title">Default credentials</div>
+        Email: <code>admin@htmless.com</code> / Password: <code>admin123</code>. Change these immediately in production.
+    </div>
+
+    <h2>Local Development Setup</h2>
+    <p>If you want to develop HTMLess itself, use the dev compose file with hot reloading.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Terminal<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment"># Install dependencies</span>
+pnpm install
+
+<span class="hl-comment"># Start Postgres + Redis</span>
+docker compose -f docker-compose.dev.yml up -d
+
+<span class="hl-comment"># Run migrations and seed</span>
+pnpm --filter @htmless/core run db:migrate
+pnpm --filter @htmless/core run db:seed
+
+<span class="hl-comment"># Start API + Admin in dev mode</span>
+pnpm dev</pre>
+    </div>
+
+    <h2>Your First API Call</h2>
+    <p>Once the stack is running, authenticate and fetch content types.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Terminal (cURL)<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment"># 1. Login to get a JWT token</span>
+curl -s -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/auth/login</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{"email":"admin@htmless.com","password":"admin123"}'</span>
+
+<span class="hl-comment"># Response: { "token": "eyJhbG...", "user": { ... } }</span>
+
+<span class="hl-comment"># 2. List content types</span>
+curl -s <span class="hl-url">http://localhost:3000/cda/v1/schemas/types</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span>
+
+<span class="hl-comment"># 3. Fetch published entries</span>
+curl -s <span class="hl-url">http://localhost:3000/cda/v1/content/article</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span></pre>
+    </div>
+
+    <h2>Project Structure</h2>
+    <table class="doc-table">
+        <thead><tr><th>Package</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>packages/core</code></td><td>API server, database, auth, CLI, SDK, webhooks, workers</td></tr>
+            <tr><td><code>packages/admin</code></td><td>Next.js admin dashboard</td></tr>
+            <tr><td><code>packages/worker</code></td><td>Background job processor (webhooks, scheduling)</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  API REFERENCE                                                ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="api-reference">
+    <h1>API Reference</h1>
+    <p class="lead">HTMLess exposes three API surfaces: CMA (write), CDA (read), and Preview (draft-inclusive). All endpoints return JSON and require the <code>X-Space-Id</code> header.</p>
+
+    <h2>Content Management API (CMA)</h2>
+    <p>Write-heavy, role-gated endpoints for editors and automation. Requires a JWT or API token with appropriate scopes.</p>
+
+    <h3>Schema Endpoints</h3>
+    <div style="margin:0.75rem 0 1.25rem;">
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cma/v1/schemas/types</span> <span class="endpoint-desc">List all content types</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cma/v1/schemas/types/:key</span> <span class="endpoint-desc">Get a content type</span></div>
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/cma/v1/schemas/types</span> <span class="endpoint-desc">Create content type</span></div>
+        <div class="endpoint-row"><span class="badge badge-patch">PATCH</span> <span class="endpoint-path">/cma/v1/schemas/types/:key</span> <span class="endpoint-desc">Update content type</span></div>
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/cma/v1/schemas/types/:key/publish</span> <span class="endpoint-desc">Publish schema version</span></div>
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/cma/v1/schemas/types/:key/fields</span> <span class="endpoint-desc">Add a field</span></div>
+        <div class="endpoint-row"><span class="badge badge-delete">DELETE</span> <span class="endpoint-path">/cma/v1/schemas/types/:key/fields/:fieldKey</span> <span class="endpoint-desc">Remove a field</span></div>
+    </div>
+
+    <h3>Entry Endpoints</h3>
+    <div style="margin:0.75rem 0 1.25rem;">
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cma/v1/entries</span> <span class="endpoint-desc">List entries (with filters)</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cma/v1/entries/:id</span> <span class="endpoint-desc">Get entry with versions</span></div>
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/cma/v1/entries</span> <span class="endpoint-desc">Create entry</span></div>
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/cma/v1/entries/:id:saveDraft</span> <span class="endpoint-desc">Save draft version</span></div>
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/cma/v1/entries/:id:publish</span> <span class="endpoint-desc">Publish entry</span></div>
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/cma/v1/entries/:id:unpublish</span> <span class="endpoint-desc">Unpublish entry</span></div>
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/cma/v1/entries/:id:schedule</span> <span class="endpoint-desc">Schedule publishing</span></div>
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/cma/v1/entries/:id:revert</span> <span class="endpoint-desc">Revert to prior version</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cma/v1/entries/:id/versions</span> <span class="endpoint-desc">List all versions</span></div>
+        <div class="endpoint-row"><span class="badge badge-delete">DELETE</span> <span class="endpoint-path">/cma/v1/entries/:id</span> <span class="endpoint-desc">Delete entry</span></div>
+    </div>
+
+    <h3>Example: Create an Entry</h3>
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/entries</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "typeKey": "article",
+    "slug": "hello-world",
+    "fields": {
+      "title": "Hello World",
+      "body": "Welcome to HTMLess.",
+      "author": "admin"
+    }
+  }'</span></pre>
+    </div>
+
+    <h3>Response</h3>
+    <div class="code-block">
+        <div class="code-block-header">JSON<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"id"</span><span class="hl-punct">:</span> <span class="hl-str">"cln1a2b3c4d5e6f7g8h9i0j"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"typeKey"</span><span class="hl-punct">:</span> <span class="hl-str">"article"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"slug"</span><span class="hl-punct">:</span> <span class="hl-str">"hello-world"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"state"</span><span class="hl-punct">:</span> <span class="hl-str">"draft"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"fields"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+    <span class="hl-key">"title"</span><span class="hl-punct">:</span> <span class="hl-str">"Hello World"</span><span class="hl-punct">,</span>
+    <span class="hl-key">"body"</span><span class="hl-punct">:</span> <span class="hl-str">"Welcome to HTMLess."</span><span class="hl-punct">,</span>
+    <span class="hl-key">"author"</span><span class="hl-punct">:</span> <span class="hl-str">"admin"</span>
+  <span class="hl-punct">},</span>
+  <span class="hl-key">"version"</span><span class="hl-punct">:</span> <span class="hl-num">1</span><span class="hl-punct">,</span>
+  <span class="hl-key">"createdAt"</span><span class="hl-punct">:</span> <span class="hl-str">"2026-04-03T12:00:00.000Z"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"updatedAt"</span><span class="hl-punct">:</span> <span class="hl-str">"2026-04-03T12:00:00.000Z"</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <h2>Content Delivery API (CDA)</h2>
+    <p>Read-only, published-only endpoints optimized for frontend consumption. Responses include <code>Cache-Control</code> and <code>ETag</code> headers for CDN caching.</p>
+
+    <div style="margin:0.75rem 0 1.25rem;">
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cda/v1/content/:typeKey</span> <span class="endpoint-desc">List published entries</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cda/v1/content/:typeKey/:id</span> <span class="endpoint-desc">Get single published entry</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cda/v1/schemas/types</span> <span class="endpoint-desc">List content types</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cda/v1/assets/:id</span> <span class="endpoint-desc">Get asset metadata</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cda/v1/blocks/definitions</span> <span class="endpoint-desc">List block definitions</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cda/v1/patterns</span> <span class="endpoint-desc">List block patterns</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/cda/v1/taxonomies/:key/terms</span> <span class="endpoint-desc">List taxonomy terms</span></div>
+    </div>
+
+    <h3>Query Parameters</h3>
+    <table class="doc-table">
+        <thead><tr><th>Param</th><th>Description</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td><code>slug</code></td><td>Filter by slug</td><td><code>?slug=hello-world</code></td></tr>
+            <tr><td><code>locale</code></td><td>Locale for localized fields</td><td><code>?locale=fr</code></td></tr>
+            <tr><td><code>fields</code></td><td>Response projection</td><td><code>?fields=title,slug</code></td></tr>
+            <tr><td><code>include</code></td><td>Expand references</td><td><code>?include=author</code></td></tr>
+            <tr><td><code>sort</code></td><td>Sort order</td><td><code>?sort=-createdAt</code></td></tr>
+            <tr><td><code>page</code></td><td>Page number</td><td><code>?page=2</code></td></tr>
+            <tr><td><code>limit</code></td><td>Items per page (max 100)</td><td><code>?limit=25</code></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Example: Fetch Articles</h3>
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -s <span class="hl-url">http://localhost:3000/cda/v1/content/article?limit=10&amp;sort=-createdAt&amp;fields=title,slug,createdAt</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Response<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"items"</span><span class="hl-punct">:</span> <span class="hl-punct">[</span>
+    <span class="hl-punct">{</span>
+      <span class="hl-key">"id"</span><span class="hl-punct">:</span> <span class="hl-str">"cln1a2b3c..."</span><span class="hl-punct">,</span>
+      <span class="hl-key">"slug"</span><span class="hl-punct">:</span> <span class="hl-str">"hello-world"</span><span class="hl-punct">,</span>
+      <span class="hl-key">"fields"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+        <span class="hl-key">"title"</span><span class="hl-punct">:</span> <span class="hl-str">"Hello World"</span><span class="hl-punct">,</span>
+        <span class="hl-key">"slug"</span><span class="hl-punct">:</span> <span class="hl-str">"hello-world"</span><span class="hl-punct">,</span>
+        <span class="hl-key">"createdAt"</span><span class="hl-punct">:</span> <span class="hl-str">"2026-04-03T12:00:00.000Z"</span>
+      <span class="hl-punct">}</span>
+    <span class="hl-punct">}</span>
+  <span class="hl-punct">],</span>
+  <span class="hl-key">"pagination"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+    <span class="hl-key">"page"</span><span class="hl-punct">:</span> <span class="hl-num">1</span><span class="hl-punct">,</span>
+    <span class="hl-key">"limit"</span><span class="hl-punct">:</span> <span class="hl-num">10</span><span class="hl-punct">,</span>
+    <span class="hl-key">"total"</span><span class="hl-punct">:</span> <span class="hl-num">1</span><span class="hl-punct">,</span>
+    <span class="hl-key">"totalPages"</span><span class="hl-punct">:</span> <span class="hl-num">1</span>
+  <span class="hl-punct">}</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <h2>Preview API</h2>
+    <p>Draft-inclusive reads for preview environments. Requires a preview token and returns the latest draft version of entries.</p>
+
+    <div style="margin:0.75rem 0 1.25rem;">
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/preview/v1/content/:typeKey</span> <span class="endpoint-desc">List entries (draft-preferred)</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/preview/v1/content/:typeKey/:id</span> <span class="endpoint-desc">Get entry (draft-preferred)</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/preview/v1/schemas/types</span> <span class="endpoint-desc">List schemas (include unpublished)</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/preview/v1/assets/:id</span> <span class="endpoint-desc">Get asset (include private)</span></div>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -s <span class="hl-url">http://localhost:3000/preview/v1/content/article?slug=hello-world</span> \
+  -H <span class="hl-str">"Authorization: Bearer PREVIEW_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span></pre>
+    </div>
+
+    <h2>Response Shaping</h2>
+    <p>All list endpoints support response shaping to minimize payload size.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Example<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment"># Only return title and slug fields, expand the author reference</span>
+<span class="hl-method">GET</span> <span class="hl-url">/cda/v1/content/article?fields=title,slug&amp;include=author</span>
+
+<span class="hl-comment"># Sort by creation date descending, page 2 with 25 items</span>
+<span class="hl-method">GET</span> <span class="hl-url">/cda/v1/content/article?sort=-createdAt&amp;page=2&amp;limit=25</span></pre>
+    </div>
+
+    <h2>Concurrency Control</h2>
+    <p>Mutable CMA endpoints use <code>ETag</code> / <code>If-Match</code> for optimistic concurrency (RFC 7232). The server returns an ETag with every response. When updating, pass it back.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/entries/ENTRY_ID:saveDraft</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"If-Match: \"v3\""</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{"fields":{"title":"Updated Title"}}'</span>
+
+<span class="hl-comment"># Returns 412 Precondition Failed if the ETag doesn't match</span></pre>
+    </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  AUTHENTICATION                                               ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="authentication">
+    <h1>Authentication</h1>
+    <p class="lead">HTMLess uses JWT for interactive sessions and scoped API tokens for machine access. RBAC is enforced on every route.</p>
+
+    <h2>JWT Login</h2>
+    <p>Authenticate with email and password to receive a JWT token for CMA access.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/auth/login</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "email": "admin@htmless.com",
+    "password": "admin123"
+  }'</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Response<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"token"</span><span class="hl-punct">:</span> <span class="hl-str">"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."</span><span class="hl-punct">,</span>
+  <span class="hl-key">"user"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+    <span class="hl-key">"id"</span><span class="hl-punct">:</span> <span class="hl-str">"usr_abc123"</span><span class="hl-punct">,</span>
+    <span class="hl-key">"email"</span><span class="hl-punct">:</span> <span class="hl-str">"admin@htmless.com"</span><span class="hl-punct">,</span>
+    <span class="hl-key">"name"</span><span class="hl-punct">:</span> <span class="hl-str">"Admin"</span><span class="hl-punct">,</span>
+    <span class="hl-key">"role"</span><span class="hl-punct">:</span> <span class="hl-str">"admin"</span>
+  <span class="hl-punct">}</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <p>Include the token in subsequent requests:</p>
+    <div class="code-block">
+        <div class="code-block-header">Header<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-header">Authorization</span>: Bearer eyJhbGciOiJIUzI1NiIs...</pre>
+    </div>
+
+    <h2>API Tokens</h2>
+    <p>API tokens are long-lived, scoped credentials for machine-to-machine access. Created by admins through the CMA.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Create an API Token<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/api-tokens</span> \
+  -H <span class="hl-str">"Authorization: Bearer ADMIN_JWT"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "name": "Next.js Frontend",
+    "scopes": ["cda:read"],
+    "expiresIn": "90d"
+  }'</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Response<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"id"</span><span class="hl-punct">:</span> <span class="hl-str">"tok_a1b2c3d4"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"name"</span><span class="hl-punct">:</span> <span class="hl-str">"Next.js Frontend"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"token"</span><span class="hl-punct">:</span> <span class="hl-str">"htk_live_xxxxxxxxxxxxxxxxxxxx"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"scopes"</span><span class="hl-punct">:</span> <span class="hl-punct">[</span><span class="hl-str">"cda:read"</span><span class="hl-punct">],</span>
+  <span class="hl-key">"expiresAt"</span><span class="hl-punct">:</span> <span class="hl-str">"2026-07-02T00:00:00.000Z"</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <div class="callout callout-warn">
+        <div class="callout-title">Security note</div>
+        The <code>token</code> value is only shown once at creation time. Store it securely.
+    </div>
+
+    <h2>Preview Tokens</h2>
+    <p>Short-lived tokens for preview environments. Can be scoped to a single entry or a content type.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Create a Preview Token<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/preview-tokens</span> \
+  -H <span class="hl-str">"Authorization: Bearer ADMIN_JWT"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "audience": "preview.mysite.com",
+    "entryId": "cln1a2b3c4d5e6f7g8h9i0j",
+    "expiresIn": "1h"
+  }'</span></pre>
+    </div>
+
+    <h2>RBAC Roles</h2>
+    <table class="doc-table">
+        <thead><tr><th>Role</th><th>Scopes</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>admin</code></td><td>All</td><td>Full access to everything</td></tr>
+            <tr><td><code>editor</code></td><td><code>cma:read</code> <code>cma:write</code></td><td>Create, edit, publish content</td></tr>
+            <tr><td><code>author</code></td><td><code>cma:read</code> <code>cma:write:own</code></td><td>Edit own content only</td></tr>
+            <tr><td><code>viewer</code></td><td><code>cma:read</code></td><td>Read-only CMA access</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Required Headers</h2>
+    <table class="doc-table">
+        <thead><tr><th>Header</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>X-Space-Id</code></td><td>Always</td><td>Identifies the space (tenant)</td></tr>
+            <tr><td><code>Authorization</code></td><td>CMA, Preview</td><td>Bearer token (JWT or API token)</td></tr>
+            <tr><td><code>Content-Type</code></td><td>POST/PATCH</td><td>Must be <code>application/json</code></td></tr>
+            <tr><td><code>If-Match</code></td><td>Updates</td><td>ETag for concurrency control</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  CONTENT MODELING                                              ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="content-modeling">
+    <h1>Content Modeling</h1>
+    <p class="lead">Define your content structure with content types, fields, taxonomies, and localization. Changes are versioned and published explicitly.</p>
+
+    <h2>Content Types</h2>
+    <p>A content type defines the shape of your content. Each type has a unique key, a display name, and a set of fields.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Create a Content Type<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/schemas/types</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "key": "article",
+    "name": "Article",
+    "description": "Blog posts and articles"
+  }'</span></pre>
+    </div>
+
+    <h2>Field Types</h2>
+    <table class="doc-table">
+        <thead><tr><th>Type</th><th>Description</th><th>Example Value</th></tr></thead>
+        <tbody>
+            <tr><td><code>text</code></td><td>Plain text string</td><td><code>"Hello World"</code></td></tr>
+            <tr><td><code>richtext</code></td><td>Rich text with formatting</td><td><code>"&lt;p&gt;Hello&lt;/p&gt;"</code></td></tr>
+            <tr><td><code>number</code></td><td>Integer or decimal</td><td><code>42</code></td></tr>
+            <tr><td><code>boolean</code></td><td>True/false toggle</td><td><code>true</code></td></tr>
+            <tr><td><code>date</code></td><td>ISO 8601 date/datetime</td><td><code>"2026-04-03"</code></td></tr>
+            <tr><td><code>media</code></td><td>Reference to an asset</td><td><code>"asset_abc123"</code></td></tr>
+            <tr><td><code>reference</code></td><td>Reference to another entry</td><td><code>"entry_xyz789"</code></td></tr>
+            <tr><td><code>json</code></td><td>Arbitrary JSON data</td><td><code>{"key": "value"}</code></td></tr>
+            <tr><td><code>slug</code></td><td>URL-safe identifier</td><td><code>"hello-world"</code></td></tr>
+            <tr><td><code>enum</code></td><td>Predefined value set</td><td><code>"published"</code></td></tr>
+        </tbody>
+    </table>
+
+    <h3>Add Fields to a Type</h3>
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/schemas/types/article/fields</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "key": "title",
+    "name": "Title",
+    "type": "text",
+    "required": true,
+    "localized": true,
+    "validations": {
+      "minLength": 1,
+      "maxLength": 200
+    }
+  }'</span></pre>
+    </div>
+
+    <h2>Taxonomies</h2>
+    <p>Taxonomies let you classify entries with terms. They can be flat (tags) or hierarchical (categories).</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Create a Taxonomy<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/taxonomies</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "key": "category",
+    "hierarchical": true,
+    "allowedTypes": ["article", "page"],
+    "labels": {
+      "singular": "Category",
+      "plural": "Categories"
+    }
+  }'</span></pre>
+    </div>
+
+    <h2>Localization</h2>
+    <p>Mark individual fields as <code>localized: true</code> to store per-locale values. Non-localized fields share a single value across locales.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Localized Entry<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment">// When a field is localized, its value is an object keyed by locale</span>
+<span class="hl-punct">{</span>
+  <span class="hl-key">"fields"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+    <span class="hl-key">"title"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+      <span class="hl-key">"en"</span><span class="hl-punct">:</span> <span class="hl-str">"Hello World"</span><span class="hl-punct">,</span>
+      <span class="hl-key">"fr"</span><span class="hl-punct">:</span> <span class="hl-str">"Bonjour le monde"</span><span class="hl-punct">,</span>
+      <span class="hl-key">"de"</span><span class="hl-punct">:</span> <span class="hl-str">"Hallo Welt"</span>
+    <span class="hl-punct">},</span>
+    <span class="hl-key">"author"</span><span class="hl-punct">:</span> <span class="hl-str">"admin"</span>  <span class="hl-comment">// not localized, single value</span>
+  <span class="hl-punct">}</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Fetch in French<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl <span class="hl-url">http://localhost:3000/cda/v1/content/article?slug=hello-world&amp;locale=fr</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span></pre>
+    </div>
+
+    <h2>Schema Versioning</h2>
+    <p>Schema changes are tracked with a version number. When you add or remove fields, the version increments. Publish the schema to make changes available in the CDA.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Publish Schema<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/schemas/types/article/publish</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span></pre>
+    </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  CONTENT WORKFLOW                                              ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="content-workflow">
+    <h1>Content Workflow</h1>
+    <p class="lead">Every entry follows a state machine: <code>draft</code> &rarr; <code>published</code> &rarr; <code>archived</code>. Versions are immutable snapshots.</p>
+
+    <h2>Draft / Publish Lifecycle</h2>
+    <p>Entries start as drafts. Each save creates an immutable version. Publishing pins a version as the live content served by the CDA.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Save a Draft<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/entries/ENTRY_ID:saveDraft</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "fields": {
+      "title": "Updated Draft Title",
+      "body": "Work in progress..."
+    }
+  }'</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Publish<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/entries/ENTRY_ID:publish</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span></pre>
+    </div>
+
+    <h2>Versioning</h2>
+    <p>Every draft save increments the version number. You can list all versions and revert to any prior one.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">List Versions<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl <span class="hl-url">http://localhost:3000/cma/v1/entries/ENTRY_ID/versions</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Response<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"items"</span><span class="hl-punct">:</span> <span class="hl-punct">[</span>
+    <span class="hl-punct">{</span> <span class="hl-key">"version"</span><span class="hl-punct">:</span> <span class="hl-num">3</span><span class="hl-punct">,</span> <span class="hl-key">"createdAt"</span><span class="hl-punct">:</span> <span class="hl-str">"2026-04-03T14:30:00Z"</span><span class="hl-punct">,</span> <span class="hl-key">"createdBy"</span><span class="hl-punct">:</span> <span class="hl-str">"admin"</span> <span class="hl-punct">},</span>
+    <span class="hl-punct">{</span> <span class="hl-key">"version"</span><span class="hl-punct">:</span> <span class="hl-num">2</span><span class="hl-punct">,</span> <span class="hl-key">"createdAt"</span><span class="hl-punct">:</span> <span class="hl-str">"2026-04-03T13:00:00Z"</span><span class="hl-punct">,</span> <span class="hl-key">"createdBy"</span><span class="hl-punct">:</span> <span class="hl-str">"admin"</span> <span class="hl-punct">},</span>
+    <span class="hl-punct">{</span> <span class="hl-key">"version"</span><span class="hl-punct">:</span> <span class="hl-num">1</span><span class="hl-punct">,</span> <span class="hl-key">"createdAt"</span><span class="hl-punct">:</span> <span class="hl-str">"2026-04-03T12:00:00Z"</span><span class="hl-punct">,</span> <span class="hl-key">"createdBy"</span><span class="hl-punct">:</span> <span class="hl-str">"admin"</span> <span class="hl-punct">}</span>
+  <span class="hl-punct">]</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Revert to Version 1<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/entries/ENTRY_ID:revert</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{"toVersion": 1}'</span></pre>
+    </div>
+
+    <h2>Scheduling</h2>
+    <p>Schedule an entry to be published at a future time. The worker will automatically publish it when the time arrives.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Schedule Publishing<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/entries/ENTRY_ID:schedule</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{"publishAt": "2026-04-10T09:00:00Z"}'</span></pre>
+    </div>
+
+    <h2>Preview</h2>
+    <p>Use the Preview API to see draft content in your frontend before publishing. Create a preview token, then pass it to the Preview API.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Next.js Preview Route<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment">// app/api/preview/route.ts</span>
+<span class="hl-keyword">import</span> { draftMode } <span class="hl-keyword">from</span> <span class="hl-str">'next/headers'</span>;
+<span class="hl-keyword">import</span> { redirect } <span class="hl-keyword">from</span> <span class="hl-str">'next/navigation'</span>;
+
+<span class="hl-keyword">export async function</span> <span class="hl-fn">GET</span>(request: Request) {
+  <span class="hl-keyword">const</span> { searchParams } = <span class="hl-keyword">new</span> <span class="hl-type">URL</span>(request.url);
+  <span class="hl-keyword">const</span> slug = searchParams.<span class="hl-fn">get</span>(<span class="hl-str">'slug'</span>);
+  <span class="hl-keyword">const</span> previewToken = searchParams.<span class="hl-fn">get</span>(<span class="hl-str">'token'</span>);
+
+  <span class="hl-comment">// Validate the preview token with HTMLess</span>
+  <span class="hl-keyword">const</span> res = <span class="hl-keyword">await</span> <span class="hl-fn">fetch</span>(
+    <span class="hl-str">`http://localhost:3000/preview/v1/content/article?slug=${slug}`</span>,
+    { headers: {
+      <span class="hl-str">'Authorization'</span>: <span class="hl-str">`Bearer ${previewToken}`</span>,
+      <span class="hl-str">'X-Space-Id'</span>: process.env.HTMLESS_SPACE_ID!,
+    }}
+  );
+
+  <span class="hl-keyword">if</span> (!res.ok) <span class="hl-keyword">return new</span> <span class="hl-type">Response</span>(<span class="hl-str">'Invalid preview'</span>, { status: <span class="hl-num">401</span> });
+
+  (<span class="hl-keyword">await</span> <span class="hl-fn">draftMode</span>()).<span class="hl-fn">enable</span>();
+  <span class="hl-fn">redirect</span>(<span class="hl-str">`/articles/${slug}`</span>);
+}</pre>
+    </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  BLOCKS & PATTERNS                                            ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="blocks">
+    <h1>Blocks &amp; Patterns</h1>
+    <p class="lead">Structured rich content stored as validated JSON trees -- not HTML. Define block types, compose patterns, and render with the SDK.</p>
+
+    <h2>Core Blocks</h2>
+    <p>HTMLess ships with seven core block types. Each has a validated attributes schema.</p>
+
+    <table class="doc-table">
+        <thead><tr><th>Block</th><th>Key</th><th>Attributes</th></tr></thead>
+        <tbody>
+            <tr><td>Paragraph</td><td><code>paragraph</code></td><td><code>text</code></td></tr>
+            <tr><td>Heading</td><td><code>heading</code></td><td><code>level</code>, <code>text</code></td></tr>
+            <tr><td>Image</td><td><code>image</code></td><td><code>assetId</code>, <code>alt</code>, <code>caption</code></td></tr>
+            <tr><td>Callout</td><td><code>callout</code></td><td><code>tone</code>, <code>title</code>, <code>body</code></td></tr>
+            <tr><td>Embed</td><td><code>embed</code></td><td><code>url</code></td></tr>
+            <tr><td>List</td><td><code>list</code></td><td><code>ordered</code>, <code>items</code></td></tr>
+            <tr><td>Code</td><td><code>code</code></td><td><code>language</code>, <code>code</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>Block Instance Format</h2>
+    <div class="code-block">
+        <div class="code-block-header">JSON<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"typeKey"</span><span class="hl-punct">:</span> <span class="hl-str">"heading"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"version"</span><span class="hl-punct">:</span> <span class="hl-str">"1.0.0"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"attrs"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+    <span class="hl-key">"level"</span><span class="hl-punct">:</span> <span class="hl-num">2</span><span class="hl-punct">,</span>
+    <span class="hl-key">"text"</span><span class="hl-punct">:</span> <span class="hl-str">"Getting Started with HTMLess"</span>
+  <span class="hl-punct">},</span>
+  <span class="hl-key">"children"</span><span class="hl-punct">:</span> <span class="hl-punct">[]</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <h2>Custom Block Definitions</h2>
+    <p>Register your own block types with a JSON Schema for attributes validation.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Register a Block Definition<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/blocks/definitions</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "key": "testimonial",
+    "title": "Testimonial",
+    "icon": "quote",
+    "version": "1.0.0",
+    "attributesSchema": {
+      "type": "object",
+      "properties": {
+        "quote": { "type": "string" },
+        "author": { "type": "string" },
+        "role": { "type": "string" },
+        "avatarAssetId": { "type": "string" }
+      },
+      "required": ["quote", "author"]
+    }
+  }'</span></pre>
+    </div>
+
+    <h2>Block Patterns</h2>
+    <p>Patterns are reusable block compositions. Think of them as templates that insert a predefined block tree.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Create a Pattern<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/patterns</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "title": "Article Intro",
+    "blockTree": [
+      { "typeKey": "heading", "attrs": { "level": 1, "text": "" } },
+      { "typeKey": "paragraph", "attrs": { "text": "" } },
+      { "typeKey": "image", "attrs": { "assetId": "", "alt": "" } }
+    ]
+  }'</span></pre>
+    </div>
+
+    <h2>Renderer SDK</h2>
+    <p>Use the renderer SDK to turn block trees into HTML/JSX in your frontend.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">TypeScript / React<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">import type</span> { <span class="hl-type">BlockInstance</span>, <span class="hl-type">BlockRendererMap</span> } <span class="hl-keyword">from</span> <span class="hl-str">'@htmless/core/blocks/renderer-sdk'</span>;
+<span class="hl-keyword">import</span> { renderBlocks } <span class="hl-keyword">from</span> <span class="hl-str">'@htmless/core/blocks/renderer-sdk'</span>;
+
+<span class="hl-keyword">const</span> renderers: <span class="hl-type">BlockRendererMap</span> = {
+  <span class="hl-fn">paragraph</span>: ({ attrs }) =&gt; &lt;p&gt;{attrs.text}&lt;/p&gt;,
+  <span class="hl-fn">heading</span>: ({ attrs }) =&gt; {
+    <span class="hl-keyword">const</span> Tag = <span class="hl-str">`h${attrs.level}`</span> <span class="hl-keyword">as keyof</span> JSX.IntrinsicElements;
+    <span class="hl-keyword">return</span> &lt;Tag&gt;{attrs.text}&lt;/Tag&gt;;
+  },
+  <span class="hl-fn">image</span>: ({ attrs }) =&gt; (
+    &lt;figure&gt;
+      &lt;img src={attrs.url} alt={attrs.alt || <span class="hl-str">''</span>} /&gt;
+      {attrs.caption &amp;&amp; &lt;figcaption&gt;{attrs.caption}&lt;/figcaption&gt;}
+    &lt;/figure&gt;
+  ),
+  <span class="hl-fn">callout</span>: ({ attrs }) =&gt; (
+    &lt;aside className={<span class="hl-str">`callout callout-${attrs.tone}`</span>}&gt;
+      {attrs.title &amp;&amp; &lt;strong&gt;{attrs.title}&lt;/strong&gt;}
+      &lt;p&gt;{attrs.body}&lt;/p&gt;
+    &lt;/aside&gt;
+  ),
+  <span class="hl-fn">code</span>: ({ attrs }) =&gt; (
+    &lt;pre&gt;&lt;code className={<span class="hl-str">`language-${attrs.language}`</span>}&gt;
+      {attrs.code}
+    &lt;/code&gt;&lt;/pre&gt;
+  ),
+};
+
+<span class="hl-keyword">function</span> <span class="hl-fn">ArticleBody</span>({ blocks }: { blocks: <span class="hl-type">BlockInstance</span>[] }) {
+  <span class="hl-keyword">return</span> &lt;&gt;{<span class="hl-fn">renderBlocks</span>(blocks, renderers)}&lt;/&gt;;
+}</pre>
+    </div>
+
+    <h3>Helper Functions</h3>
+    <div class="code-block">
+        <div class="code-block-header">TypeScript<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">import</span> { extractText, collectAssetIds } <span class="hl-keyword">from</span> <span class="hl-str">'@htmless/core/blocks/renderer-sdk'</span>;
+
+<span class="hl-comment">// Extract all plain text for search indexing</span>
+<span class="hl-keyword">const</span> searchText = <span class="hl-fn">extractText</span>(blocks);
+
+<span class="hl-comment">// Collect asset IDs for preloading</span>
+<span class="hl-keyword">const</span> assetIds = <span class="hl-fn">collectAssetIds</span>(blocks);</pre>
+    </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  MEDIA                                                        ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="media">
+    <h1>Media</h1>
+    <p class="lead">Upload assets, retrieve them via CDN-friendly URLs, and apply on-the-fly image transforms.</p>
+
+    <h2>Upload an Asset</h2>
+    <div class="code-block">
+        <div class="code-block-header">cURL (multipart)<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/assets</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -F <span class="hl-str">"file=@./photo.jpg"</span> \
+  -F <span class="hl-str">"alt=A scenic mountain view"</span> \
+  -F <span class="hl-str">"caption=Photo by John Doe"</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Response<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"id"</span><span class="hl-punct">:</span> <span class="hl-str">"ast_k7m2n8p4"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"filename"</span><span class="hl-punct">:</span> <span class="hl-str">"photo.jpg"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"mimeType"</span><span class="hl-punct">:</span> <span class="hl-str">"image/jpeg"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"bytes"</span><span class="hl-punct">:</span> <span class="hl-num">245891</span><span class="hl-punct">,</span>
+  <span class="hl-key">"width"</span><span class="hl-punct">:</span> <span class="hl-num">1920</span><span class="hl-punct">,</span>
+  <span class="hl-key">"height"</span><span class="hl-punct">:</span> <span class="hl-num">1080</span><span class="hl-punct">,</span>
+  <span class="hl-key">"alt"</span><span class="hl-punct">:</span> <span class="hl-str">"A scenic mountain view"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"caption"</span><span class="hl-punct">:</span> <span class="hl-str">"Photo by John Doe"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"storageKey"</span><span class="hl-punct">:</span> <span class="hl-str">"spaces/sp_abc/assets/ast_k7m2n8p4/photo.jpg"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"createdAt"</span><span class="hl-punct">:</span> <span class="hl-str">"2026-04-03T12:00:00.000Z"</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <h2>Image Transforms</h2>
+    <p>Transform images on the fly using URL query parameters. Results are cached by the CDN.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">Transform URL Pattern<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-url">https://assets.htmle.ss/{assetId}/{filename}?w=800&amp;h=450&amp;fit=crop&amp;fm=webp&amp;q=75</span></pre>
+    </div>
+
+    <table class="doc-table">
+        <thead><tr><th>Param</th><th>Description</th><th>Values</th></tr></thead>
+        <tbody>
+            <tr><td><code>w</code></td><td>Width in pixels</td><td><code>1-4000</code></td></tr>
+            <tr><td><code>h</code></td><td>Height in pixels</td><td><code>1-4000</code></td></tr>
+            <tr><td><code>fit</code></td><td>Resize behavior</td><td><code>cover</code>, <code>contain</code>, <code>crop</code>, <code>fill</code></td></tr>
+            <tr><td><code>fm</code></td><td>Output format</td><td><code>webp</code>, <code>avif</code>, <code>jpg</code>, <code>png</code></td></tr>
+            <tr><td><code>q</code></td><td>Quality</td><td><code>1-100</code></td></tr>
+        </tbody>
+    </table>
+
+    <h2>Update Asset Metadata</h2>
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">PATCH</span> <span class="hl-url">http://localhost:3000/cma/v1/assets/ast_k7m2n8p4</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{"alt": "Updated alt text", "caption": "New caption"}'</span></pre>
+    </div>
+
+    <h2>Usage Tracking</h2>
+    <p>HTMLess automatically tracks which entries reference each asset. Query usage to prevent accidental deletion of assets in use.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl <span class="hl-url">http://localhost:3000/cma/v1/assets/ast_k7m2n8p4/usages</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span>
+
+<span class="hl-comment"># Response: { "usages": [ { "entryId": "...", "field": "heroImage" } ] }</span></pre>
+    </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  WEBHOOKS                                                     ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="webhooks">
+    <h1>Webhooks</h1>
+    <p class="lead">Subscribe to content events and receive signed HTTP callbacks. Automatic retries. Full delivery logs.</p>
+
+    <h2>Create a Webhook</h2>
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/cma/v1/webhooks</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "url": "https://myapp.com/api/webhooks/htmless",
+    "events": ["entry.published", "entry.unpublished", "asset.created"],
+    "active": true
+  }'</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Response<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"id"</span><span class="hl-punct">:</span> <span class="hl-str">"wh_a1b2c3d4"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"url"</span><span class="hl-punct">:</span> <span class="hl-str">"https://myapp.com/api/webhooks/htmless"</span><span class="hl-punct">,</span>
+  <span class="hl-key">"events"</span><span class="hl-punct">:</span> <span class="hl-punct">[</span><span class="hl-str">"entry.published"</span><span class="hl-punct">,</span> <span class="hl-str">"entry.unpublished"</span><span class="hl-punct">,</span> <span class="hl-str">"asset.created"</span><span class="hl-punct">],</span>
+  <span class="hl-key">"active"</span><span class="hl-punct">:</span> <span class="hl-bool">true</span><span class="hl-punct">,</span>
+  <span class="hl-key">"signingSecret"</span><span class="hl-punct">:</span> <span class="hl-str">"whsec_xxxxxxxxxxxxxxxx"</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <h2>Available Events</h2>
+    <table class="doc-table">
+        <thead><tr><th>Event</th><th>Triggered When</th></tr></thead>
+        <tbody>
+            <tr><td><code>entry.created</code></td><td>New entry is created</td></tr>
+            <tr><td><code>entry.updated</code></td><td>Draft is saved</td></tr>
+            <tr><td><code>entry.published</code></td><td>Entry is published</td></tr>
+            <tr><td><code>entry.unpublished</code></td><td>Entry is unpublished</td></tr>
+            <tr><td><code>entry.deleted</code></td><td>Entry is deleted</td></tr>
+            <tr><td><code>asset.created</code></td><td>New asset uploaded</td></tr>
+            <tr><td><code>asset.deleted</code></td><td>Asset is deleted</td></tr>
+            <tr><td><code>schema.typePublished</code></td><td>Content type schema is published</td></tr>
+            <tr><td><code>*</code></td><td>Subscribe to all events</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Signature Verification</h2>
+    <p>Every webhook delivery is signed with HMAC-SHA256. Verify the signature in your handler to ensure authenticity.</p>
+
+    <h3>Webhook Headers</h3>
+    <table class="doc-table">
+        <thead><tr><th>Header</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>X-HTMLess-Event-Id</code></td><td>Unique event identifier</td></tr>
+            <tr><td><code>X-HTMLess-Timestamp</code></td><td>ISO 8601 timestamp of delivery</td></tr>
+            <tr><td><code>X-HTMLess-Signature</code></td><td>HMAC-SHA256 signature (<code>sha256=...</code>)</td></tr>
+        </tbody>
+    </table>
+
+    <div class="code-block">
+        <div class="code-block-header">Node.js Verification<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">import</span> { createHmac } <span class="hl-keyword">from</span> <span class="hl-str">'crypto'</span>;
+
+<span class="hl-keyword">function</span> <span class="hl-fn">verifySignature</span>(body: <span class="hl-type">string</span>, timestamp: <span class="hl-type">string</span>, signature: <span class="hl-type">string</span>, secret: <span class="hl-type">string</span>): <span class="hl-type">boolean</span> {
+  <span class="hl-comment">// Reject if timestamp is older than 5 minutes (replay protection)</span>
+  <span class="hl-keyword">const</span> age = Date.<span class="hl-fn">now</span>() - <span class="hl-keyword">new</span> <span class="hl-type">Date</span>(timestamp).<span class="hl-fn">getTime</span>();
+  <span class="hl-keyword">if</span> (age &gt; <span class="hl-num">5</span> * <span class="hl-num">60</span> * <span class="hl-num">1000</span>) <span class="hl-keyword">return</span> <span class="hl-bool">false</span>;
+
+  <span class="hl-keyword">const</span> message = <span class="hl-str">`${timestamp}.${body}`</span>;
+  <span class="hl-keyword">const</span> expected = <span class="hl-str">`sha256=${<span class="hl-fn">createHmac</span>(<span class="hl-str">'sha256'</span>, secret).<span class="hl-fn">update</span>(message).<span class="hl-fn">digest</span>(<span class="hl-str">'hex'</span>)}`</span>;
+
+  <span class="hl-keyword">return</span> signature === expected;
+}
+
+<span class="hl-comment">// In your Express handler:</span>
+app.<span class="hl-fn">post</span>(<span class="hl-str">'/api/webhooks/htmless'</span>, (req, res) =&gt; {
+  <span class="hl-keyword">const</span> isValid = <span class="hl-fn">verifySignature</span>(
+    JSON.<span class="hl-fn">stringify</span>(req.body),
+    req.headers[<span class="hl-str">'x-htmless-timestamp'</span>],
+    req.headers[<span class="hl-str">'x-htmless-signature'</span>],
+    process.env.WEBHOOK_SECRET
+  );
+
+  <span class="hl-keyword">if</span> (!isValid) <span class="hl-keyword">return</span> res.<span class="hl-fn">status</span>(<span class="hl-num">401</span>).<span class="hl-fn">send</span>(<span class="hl-str">'Invalid signature'</span>);
+
+  <span class="hl-comment">// Process the event...</span>
+  console.<span class="hl-fn">log</span>(<span class="hl-str">'Event:'</span>, req.body.eventType, req.body.data);
+  res.<span class="hl-fn">sendStatus</span>(<span class="hl-num">200</span>);
+});</pre>
+    </div>
+
+    <h2>Retry Policy</h2>
+    <p>Failed deliveries are retried up to <strong>3 times</strong> with a <strong>30-second</strong> delay between attempts. A delivery is considered failed if:</p>
+    <ul>
+        <li>The endpoint returns a non-2xx status code</li>
+        <li>The request times out after 10 seconds</li>
+        <li>A network error occurs</li>
+    </ul>
+
+    <h2>Delivery Logs</h2>
+    <p>Every delivery attempt is logged. View them in the admin dashboard or via API.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl <span class="hl-url">http://localhost:3000/cma/v1/webhooks/wh_a1b2c3d4/deliveries</span> \
+  -H <span class="hl-str">"Authorization: Bearer YOUR_TOKEN"</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span></pre>
+    </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  GRAPHQL                                                      ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="graphql">
+    <h1>GraphQL</h1>
+    <p class="lead">Query content with a GraphQL-like API. Auto-generated from your schema. Supports variables and introspection.</p>
+
+    <h2>Endpoint</h2>
+    <div style="margin:0.75rem 0 1.25rem;">
+        <div class="endpoint-row"><span class="badge badge-post">POST</span> <span class="endpoint-path">/graphql</span> <span class="endpoint-desc">Execute a query</span></div>
+        <div class="endpoint-row"><span class="badge badge-get">GET</span> <span class="endpoint-path">/graphql/schema</span> <span class="endpoint-desc">Introspection</span></div>
+    </div>
+
+    <h2>Query Syntax</h2>
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/graphql</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "query": "{ articles(limit: 10, sort: \"-createdAt\") { id slug fields { title createdAt } } }"
+  }'</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Response<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"data"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+    <span class="hl-key">"articles"</span><span class="hl-punct">:</span> <span class="hl-punct">[</span>
+      <span class="hl-punct">{</span>
+        <span class="hl-key">"id"</span><span class="hl-punct">:</span> <span class="hl-str">"cln1a2b3c..."</span><span class="hl-punct">,</span>
+        <span class="hl-key">"slug"</span><span class="hl-punct">:</span> <span class="hl-str">"hello-world"</span><span class="hl-punct">,</span>
+        <span class="hl-key">"fields"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+          <span class="hl-key">"title"</span><span class="hl-punct">:</span> <span class="hl-str">"Hello World"</span><span class="hl-punct">,</span>
+          <span class="hl-key">"createdAt"</span><span class="hl-punct">:</span> <span class="hl-str">"2026-04-03T12:00:00Z"</span>
+        <span class="hl-punct">}</span>
+      <span class="hl-punct">}</span>
+    <span class="hl-punct">]</span>
+  <span class="hl-punct">}</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <h2>Variables</h2>
+    <p>Pass variables alongside your query for parameterized requests.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl -X <span class="hl-method">POST</span> <span class="hl-url">http://localhost:3000/graphql</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span> \
+  -H <span class="hl-str">"Content-Type: application/json"</span> \
+  -d <span class="hl-str">'{
+    "query": "{ articles(slug: $slug) { id fields { title body } } }",
+    "variables": { "slug": "hello-world" }
+  }'</span></pre>
+    </div>
+
+    <h2>Introspection</h2>
+    <p>Discover available types and fields dynamically. The schema is auto-generated from your content types.</p>
+
+    <div class="code-block">
+        <div class="code-block-header">cURL<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>curl <span class="hl-url">http://localhost:3000/graphql/schema</span> \
+  -H <span class="hl-str">"X-Space-Id: YOUR_SPACE_ID"</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Response<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-punct">{</span>
+  <span class="hl-key">"schema"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+    <span class="hl-key">"types"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+      <span class="hl-key">"article"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+        <span class="hl-key">"fields"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span>
+          <span class="hl-key">"title"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span> <span class="hl-key">"type"</span><span class="hl-punct">:</span> <span class="hl-str">"text"</span><span class="hl-punct">,</span> <span class="hl-key">"required"</span><span class="hl-punct">:</span> <span class="hl-bool">true</span> <span class="hl-punct">},</span>
+          <span class="hl-key">"body"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span> <span class="hl-key">"type"</span><span class="hl-punct">:</span> <span class="hl-str">"richtext"</span><span class="hl-punct">,</span> <span class="hl-key">"required"</span><span class="hl-punct">:</span> <span class="hl-bool">false</span> <span class="hl-punct">},</span>
+          <span class="hl-key">"heroImage"</span><span class="hl-punct">:</span> <span class="hl-punct">{</span> <span class="hl-key">"type"</span><span class="hl-punct">:</span> <span class="hl-str">"media"</span><span class="hl-punct">,</span> <span class="hl-key">"required"</span><span class="hl-punct">:</span> <span class="hl-bool">false</span> <span class="hl-punct">}</span>
+        <span class="hl-punct">}</span>
+      <span class="hl-punct">}</span>
+    <span class="hl-punct">}</span>
+  <span class="hl-punct">}</span>
+<span class="hl-punct">}</span></pre>
+    </div>
+
+    <h2>JavaScript Example</h2>
+    <div class="code-block">
+        <div class="code-block-header">TypeScript<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">async function</span> <span class="hl-fn">fetchArticles</span>() {
+  <span class="hl-keyword">const</span> res = <span class="hl-keyword">await</span> <span class="hl-fn">fetch</span>(<span class="hl-str">'http://localhost:3000/graphql'</span>, {
+    method: <span class="hl-str">'POST'</span>,
+    headers: {
+      <span class="hl-str">'Content-Type'</span>: <span class="hl-str">'application/json'</span>,
+      <span class="hl-str">'X-Space-Id'</span>: <span class="hl-str">'YOUR_SPACE_ID'</span>,
+    },
+    body: JSON.<span class="hl-fn">stringify</span>({
+      query: <span class="hl-str">`{
+        articles(limit: 10, sort: "-createdAt") {
+          id
+          slug
+          fields { title body createdAt }
+        }
+      }`</span>,
+    }),
+  });
+
+  <span class="hl-keyword">const</span> { data } = <span class="hl-keyword">await</span> res.<span class="hl-fn">json</span>();
+  <span class="hl-keyword">return</span> data.articles;
+}</pre>
+    </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  SDK                                                          ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="sdk">
+    <h1>TypeScript SDK</h1>
+    <p class="lead">Zero-dependency TypeScript client for the HTMLess API. Works in Node 18+, Deno, Bun, and all modern browsers.</p>
+
+    <h2>Installation</h2>
+    <div class="code-block">
+        <div class="code-block-header">Terminal<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>npm install @htmless/core
+<span class="hl-comment"># or</span>
+pnpm add @htmless/core</pre>
+    </div>
+
+    <h2>Setup</h2>
+    <div class="code-block">
+        <div class="code-block-header">TypeScript<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">import</span> { <span class="hl-type">HTMLessClient</span> } <span class="hl-keyword">from</span> <span class="hl-str">'@htmless/core/sdk/client'</span>;
+
+<span class="hl-keyword">const</span> client = <span class="hl-keyword">new</span> <span class="hl-type">HTMLessClient</span>({
+  baseUrl: <span class="hl-str">'http://localhost:3000'</span>,
+  spaceId: <span class="hl-str">'YOUR_SPACE_ID'</span>,
+  apiToken: <span class="hl-str">'htk_live_xxxxxxxxxxxxxxxxxxxx'</span>,
+});</pre>
+    </div>
+
+    <h2>Fetch Entries</h2>
+    <div class="code-block">
+        <div class="code-block-header">TypeScript<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment">// List entries with filtering and sorting</span>
+<span class="hl-keyword">const</span> { items, meta } = <span class="hl-keyword">await</span> client.<span class="hl-fn">getEntries</span>&lt;<span class="hl-type">Article</span>&gt;(<span class="hl-str">'article'</span>, {
+  sort: <span class="hl-str">'-createdAt'</span>,
+  limit: <span class="hl-num">10</span>,
+  fields: [<span class="hl-str">'title'</span>, <span class="hl-str">'slug'</span>, <span class="hl-str">'createdAt'</span>],
+  include: [<span class="hl-str">'author'</span>],
+});
+
+console.<span class="hl-fn">log</span>(items);    <span class="hl-comment">// Article[]</span>
+console.<span class="hl-fn">log</span>(meta.total); <span class="hl-comment">// total count</span>
+
+<span class="hl-comment">// Get a single entry by ID</span>
+<span class="hl-keyword">const</span> article = <span class="hl-keyword">await</span> client.<span class="hl-fn">getEntry</span>&lt;<span class="hl-type">Article</span>&gt;(<span class="hl-str">'article'</span>, <span class="hl-str">'ENTRY_ID'</span>);
+
+<span class="hl-comment">// Filter by slug</span>
+<span class="hl-keyword">const</span> { items: bySlug } = <span class="hl-keyword">await</span> client.<span class="hl-fn">getEntries</span>&lt;<span class="hl-type">Article</span>&gt;(<span class="hl-str">'article'</span>, {
+  slug: <span class="hl-str">'hello-world'</span>,
+});</pre>
+    </div>
+
+    <h2>Fetch Schema</h2>
+    <div class="code-block">
+        <div class="code-block-header">TypeScript<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment">// List all content types</span>
+<span class="hl-keyword">const</span> types = <span class="hl-keyword">await</span> client.<span class="hl-fn">getTypes</span>();
+
+<span class="hl-comment">// Get a specific content type with its fields</span>
+<span class="hl-keyword">const</span> articleType = <span class="hl-keyword">await</span> client.<span class="hl-fn">getType</span>(<span class="hl-str">'article'</span>);
+console.<span class="hl-fn">log</span>(articleType.fields); <span class="hl-comment">// ContentTypeField[]</span></pre>
+    </div>
+
+    <h2>Assets</h2>
+    <div class="code-block">
+        <div class="code-block-header">TypeScript<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">const</span> asset = <span class="hl-keyword">await</span> client.<span class="hl-fn">getAsset</span>(<span class="hl-str">'ast_k7m2n8p4'</span>);
+console.<span class="hl-fn">log</span>(asset.filename);  <span class="hl-comment">// "photo.jpg"</span>
+console.<span class="hl-fn">log</span>(asset.width);     <span class="hl-comment">// 1920</span>
+console.<span class="hl-fn">log</span>(asset.mimeType);  <span class="hl-comment">// "image/jpeg"</span></pre>
+    </div>
+
+    <h2>Preview</h2>
+    <div class="code-block">
+        <div class="code-block-header">TypeScript<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment">// Fetch draft content for preview</span>
+<span class="hl-keyword">const</span> draft = <span class="hl-keyword">await</span> client.<span class="hl-fn">getPreview</span>&lt;<span class="hl-type">Article</span>&gt;(
+  <span class="hl-str">'article'</span>,
+  <span class="hl-str">'hello-world'</span>,
+  <span class="hl-str">'PREVIEW_TOKEN'</span>
+);</pre>
+    </div>
+
+    <h2>Error Handling</h2>
+    <div class="code-block">
+        <div class="code-block-header">TypeScript<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">import</span> { <span class="hl-type">HTMLessError</span> } <span class="hl-keyword">from</span> <span class="hl-str">'@htmless/core/sdk/client'</span>;
+
+<span class="hl-keyword">try</span> {
+  <span class="hl-keyword">const</span> article = <span class="hl-keyword">await</span> client.<span class="hl-fn">getEntry</span>(<span class="hl-str">'article'</span>, <span class="hl-str">'nonexistent'</span>);
+} <span class="hl-keyword">catch</span> (err) {
+  <span class="hl-keyword">if</span> (err <span class="hl-keyword">instanceof</span> <span class="hl-type">HTMLessError</span>) {
+    console.<span class="hl-fn">log</span>(err.status); <span class="hl-comment">// 404</span>
+    console.<span class="hl-fn">log</span>(err.body);   <span class="hl-comment">// raw error body</span>
+  }
+}</pre>
+    </div>
+
+    <h2>Next.js Integration</h2>
+    <div class="code-block">
+        <div class="code-block-header">app/articles/page.tsx<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">import</span> { <span class="hl-type">HTMLessClient</span> } <span class="hl-keyword">from</span> <span class="hl-str">'@htmless/core/sdk/client'</span>;
+
+<span class="hl-keyword">const</span> cms = <span class="hl-keyword">new</span> <span class="hl-type">HTMLessClient</span>({
+  baseUrl: process.env.HTMLESS_URL!,
+  spaceId: process.env.HTMLESS_SPACE_ID!,
+  apiToken: process.env.HTMLESS_API_TOKEN!,
+});
+
+<span class="hl-keyword">export default async function</span> <span class="hl-fn">ArticlesPage</span>() {
+  <span class="hl-keyword">const</span> { items } = <span class="hl-keyword">await</span> cms.<span class="hl-fn">getEntries</span>(<span class="hl-str">'article'</span>, {
+    sort: <span class="hl-str">'-createdAt'</span>,
+    limit: <span class="hl-num">20</span>,
+  });
+
+  <span class="hl-keyword">return</span> (
+    &lt;ul&gt;
+      {items.<span class="hl-fn">map</span>((a: <span class="hl-type">any</span>) =&gt; (
+        &lt;li key={a.id}&gt;
+          &lt;a href={<span class="hl-str">`/articles/${a.slug}`</span>}&gt;{a.fields.title}&lt;/a&gt;
+        &lt;/li&gt;
+      ))}
+    &lt;/ul&gt;
+  );
+}</pre>
+    </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  SELF-HOSTING                                                 ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="self-hosting">
+    <h1>Self-Hosting</h1>
+    <p class="lead">Run HTMLess on your own infrastructure with Docker Compose. PostgreSQL + Redis + API + Admin + Worker in one stack.</p>
+
+    <h2>Docker Compose</h2>
+    <div class="code-block">
+        <div class="code-block-header">docker-compose.yml<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-key">services</span><span class="hl-punct">:</span>
+  <span class="hl-key">postgres</span><span class="hl-punct">:</span>
+    <span class="hl-key">image</span><span class="hl-punct">:</span> <span class="hl-str">postgres:16-alpine</span>
+    <span class="hl-key">restart</span><span class="hl-punct">:</span> unless-stopped
+    <span class="hl-key">environment</span><span class="hl-punct">:</span>
+      <span class="hl-key">POSTGRES_USER</span><span class="hl-punct">:</span> <span class="hl-str">htmless</span>
+      <span class="hl-key">POSTGRES_PASSWORD</span><span class="hl-punct">:</span> <span class="hl-str">${DB_PASSWORD:-htmless_prod}</span>
+      <span class="hl-key">POSTGRES_DB</span><span class="hl-punct">:</span> <span class="hl-str">htmless</span>
+    <span class="hl-key">volumes</span><span class="hl-punct">:</span>
+      - pgdata:/var/lib/postgresql/data
+
+  <span class="hl-key">redis</span><span class="hl-punct">:</span>
+    <span class="hl-key">image</span><span class="hl-punct">:</span> <span class="hl-str">redis:7-alpine</span>
+    <span class="hl-key">restart</span><span class="hl-punct">:</span> unless-stopped
+    <span class="hl-key">volumes</span><span class="hl-punct">:</span>
+      - redisdata:/data
+
+  <span class="hl-key">api</span><span class="hl-punct">:</span>
+    <span class="hl-key">build</span><span class="hl-punct">:</span>
+      <span class="hl-key">context</span><span class="hl-punct">:</span> <span class="hl-str">.</span>
+      <span class="hl-key">dockerfile</span><span class="hl-punct">:</span> <span class="hl-str">Dockerfile.api</span>
+    <span class="hl-key">restart</span><span class="hl-punct">:</span> unless-stopped
+    <span class="hl-key">ports</span><span class="hl-punct">:</span>
+      - <span class="hl-str">"${API_PORT:-3000}:3000"</span>
+    <span class="hl-key">environment</span><span class="hl-punct">:</span>
+      <span class="hl-key">DATABASE_URL</span><span class="hl-punct">:</span> <span class="hl-str">postgresql://htmless:${DB_PASSWORD}@postgres:5432/htmless</span>
+      <span class="hl-key">REDIS_URL</span><span class="hl-punct">:</span> <span class="hl-str">redis://redis:6379</span>
+      <span class="hl-key">JWT_SECRET</span><span class="hl-punct">:</span> <span class="hl-str">${JWT_SECRET}</span>
+      <span class="hl-key">NODE_ENV</span><span class="hl-punct">:</span> <span class="hl-str">production</span>
+
+  <span class="hl-key">worker</span><span class="hl-punct">:</span>
+    <span class="hl-key">build</span><span class="hl-punct">:</span>
+      <span class="hl-key">context</span><span class="hl-punct">:</span> <span class="hl-str">.</span>
+      <span class="hl-key">dockerfile</span><span class="hl-punct">:</span> <span class="hl-str">Dockerfile.worker</span>
+    <span class="hl-key">restart</span><span class="hl-punct">:</span> unless-stopped
+    <span class="hl-key">environment</span><span class="hl-punct">:</span>
+      <span class="hl-key">DATABASE_URL</span><span class="hl-punct">:</span> <span class="hl-str">postgresql://htmless:${DB_PASSWORD}@postgres:5432/htmless</span>
+      <span class="hl-key">REDIS_URL</span><span class="hl-punct">:</span> <span class="hl-str">redis://redis:6379</span>
+
+  <span class="hl-key">admin</span><span class="hl-punct">:</span>
+    <span class="hl-key">build</span><span class="hl-punct">:</span>
+      <span class="hl-key">context</span><span class="hl-punct">:</span> <span class="hl-str">.</span>
+      <span class="hl-key">dockerfile</span><span class="hl-punct">:</span> <span class="hl-str">Dockerfile.admin</span>
+    <span class="hl-key">restart</span><span class="hl-punct">:</span> unless-stopped
+    <span class="hl-key">ports</span><span class="hl-punct">:</span>
+      - <span class="hl-str">"${ADMIN_PORT:-3001}:3001"</span>
+
+<span class="hl-key">volumes</span><span class="hl-punct">:</span>
+  pgdata:
+  redisdata:</pre>
+    </div>
+
+    <h2>Environment Variables</h2>
+    <table class="doc-table">
+        <thead><tr><th>Variable</th><th>Required</th><th>Default</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>DATABASE_URL</code></td><td>Yes</td><td>-</td><td>PostgreSQL connection string</td></tr>
+            <tr><td><code>REDIS_URL</code></td><td>Yes</td><td>-</td><td>Redis connection string</td></tr>
+            <tr><td><code>JWT_SECRET</code></td><td>Yes</td><td>-</td><td>Secret for signing JWT tokens</td></tr>
+            <tr><td><code>DB_PASSWORD</code></td><td>Yes</td><td><code>htmless_prod</code></td><td>PostgreSQL password</td></tr>
+            <tr><td><code>API_PORT</code></td><td>No</td><td><code>3000</code></td><td>Port for the API server</td></tr>
+            <tr><td><code>ADMIN_PORT</code></td><td>No</td><td><code>3001</code></td><td>Port for the admin dashboard</td></tr>
+            <tr><td><code>NODE_ENV</code></td><td>No</td><td><code>production</code></td><td>Runtime environment</td></tr>
+        </tbody>
+    </table>
+
+    <div class="callout callout-warn">
+        <div class="callout-title">Production security</div>
+        Always set a strong, unique <code>JWT_SECRET</code> and <code>DB_PASSWORD</code> in production. The defaults are for development only.
+    </div>
+
+    <h2>Production Configuration</h2>
+    <p>Create a <code>.env</code> file in your project root:</p>
+
+    <div class="code-block">
+        <div class="code-block-header">.env<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-key">DB_PASSWORD</span>=<span class="hl-str">a-strong-random-password-here</span>
+<span class="hl-key">JWT_SECRET</span>=<span class="hl-str">another-strong-random-secret-here</span>
+<span class="hl-key">API_PORT</span>=<span class="hl-num">3000</span>
+<span class="hl-key">ADMIN_PORT</span>=<span class="hl-num">3001</span></pre>
+    </div>
+
+    <h3>Reverse Proxy (Nginx)</h3>
+    <div class="code-block">
+        <div class="code-block-header">nginx.conf<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">server</span> {
+    <span class="hl-key">listen</span> <span class="hl-num">443</span> ssl http2;
+    <span class="hl-key">server_name</span> <span class="hl-str">cms.example.com</span>;
+
+    <span class="hl-keyword">location</span> /api/ {
+        <span class="hl-key">proxy_pass</span> <span class="hl-url">http://127.0.0.1:3000/</span>;
+        <span class="hl-key">proxy_set_header</span> Host $host;
+        <span class="hl-key">proxy_set_header</span> X-Real-IP $remote_addr;
+        <span class="hl-key">proxy_set_header</span> X-Forwarded-For $proxy_add_x_forwarded_for;
+        <span class="hl-key">proxy_set_header</span> X-Forwarded-Proto $scheme;
+    }
+
+    <span class="hl-keyword">location</span> / {
+        <span class="hl-key">proxy_pass</span> <span class="hl-url">http://127.0.0.1:3001</span>;
+        <span class="hl-key">proxy_set_header</span> Host $host;
+        <span class="hl-key">proxy_set_header</span> Upgrade $http_upgrade;
+        <span class="hl-key">proxy_set_header</span> Connection "upgrade";
+    }
+}</pre>
+    </div>
+
+    <h3>Traefik Labels</h3>
+    <p>If you use Traefik as your reverse proxy, add labels to the service definitions:</p>
+    <div class="code-block">
+        <div class="code-block-header">docker-compose.override.yml<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-key">services</span><span class="hl-punct">:</span>
+  <span class="hl-key">api</span><span class="hl-punct">:</span>
+    <span class="hl-key">labels</span><span class="hl-punct">:</span>
+      - <span class="hl-str">"traefik.enable=true"</span>
+      - <span class="hl-str">"traefik.http.routers.htmless-api.rule=Host(`api.cms.example.com`)"</span>
+      - <span class="hl-str">"traefik.http.routers.htmless-api.tls.certresolver=le"</span>
+      - <span class="hl-str">"traefik.http.services.htmless-api.loadbalancer.server.port=3000"</span></pre>
+    </div>
+</section>
+
+<!-- ╔════════════════════════════════════════════════════════════════╗ -->
+<!-- ║  CLI                                                          ║ -->
+<!-- ╚════════════════════════════════════════════════════════════════╝ -->
+<section class="doc-section" id="cli">
+    <h1>CLI</h1>
+    <p class="lead">The <code>htmless</code> CLI helps you scaffold projects, run migrations, seed data, start the dev server, and generate TypeScript types.</p>
+
+    <h2>Installation</h2>
+    <div class="code-block">
+        <div class="code-block-header">Terminal<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>npm install -g @htmless/core
+<span class="hl-comment"># or use npx</span>
+npx @htmless/core help</pre>
+    </div>
+
+    <h2>Commands</h2>
+    <table class="doc-table">
+        <thead><tr><th>Command</th><th>Description</th></tr></thead>
+        <tbody>
+            <tr><td><code>htmless init</code></td><td>Scaffold a new HTMLess project with Docker Compose and config</td></tr>
+            <tr><td><code>htmless migrate</code></td><td>Run database migrations (Prisma under the hood)</td></tr>
+            <tr><td><code>htmless seed</code></td><td>Seed the database with default roles, admin user, and core blocks</td></tr>
+            <tr><td><code>htmless dev</code></td><td>Start the API + Admin in development mode with hot reload</td></tr>
+            <tr><td><code>htmless codegen</code></td><td>Generate TypeScript types from your content type schemas</td></tr>
+            <tr><td><code>htmless help</code></td><td>Show available commands and options</td></tr>
+        </tbody>
+    </table>
+
+    <h3>htmless init</h3>
+    <p>Creates a new project directory with all required files.</p>
+    <div class="code-block">
+        <div class="code-block-header">Terminal<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>htmless init
+
+<span class="hl-comment"># Creates:</span>
+<span class="hl-comment">#   docker-compose.yml</span>
+<span class="hl-comment">#   .env.example</span>
+<span class="hl-comment">#   htmless.config.ts</span></pre>
+    </div>
+
+    <h3>htmless migrate</h3>
+    <p>Runs pending database migrations. Requires <code>DATABASE_URL</code> to be set.</p>
+    <div class="code-block">
+        <div class="code-block-header">Terminal<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-comment"># Run all pending migrations</span>
+htmless migrate
+
+<span class="hl-comment"># The command uses Prisma migrate deploy under the hood</span>
+<span class="hl-comment"># Make sure DATABASE_URL is set in your environment</span></pre>
+    </div>
+
+    <h3>htmless seed</h3>
+    <p>Seeds the database with default data: admin user, roles, and core block definitions.</p>
+    <div class="code-block">
+        <div class="code-block-header">Terminal<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>htmless seed
+
+<span class="hl-comment"># Output:</span>
+<span class="hl-comment">#   Created default space</span>
+<span class="hl-comment">#   Created admin user (admin@htmless.com / admin123)</span>
+<span class="hl-comment">#   Created roles: admin, editor, author, viewer</span>
+<span class="hl-comment">#   Seeded 7 core block definitions</span></pre>
+    </div>
+
+    <h3>htmless dev</h3>
+    <p>Starts the development server with hot reloading on the API and Admin UI.</p>
+    <div class="code-block">
+        <div class="code-block-header">Terminal<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>htmless dev
+
+<span class="hl-comment"># Starts:</span>
+<span class="hl-comment">#   API server on http://localhost:3000 (with file watching)</span>
+<span class="hl-comment">#   Admin UI on http://localhost:3001 (Next.js dev)</span></pre>
+    </div>
+
+    <h3>htmless codegen</h3>
+    <p>Generates TypeScript interfaces from your content type schemas. Run this after modifying your schema to keep types in sync.</p>
+    <div class="code-block">
+        <div class="code-block-header">Terminal<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre>htmless codegen
+
+<span class="hl-comment"># Generates: ./htmless.types.ts</span>
+<span class="hl-comment"># Example output:</span>
+<span class="hl-comment"># export interface Article {</span>
+<span class="hl-comment">#   title: string;</span>
+<span class="hl-comment">#   body: string;</span>
+<span class="hl-comment">#   author?: string;</span>
+<span class="hl-comment">#   heroImage?: string;</span>
+<span class="hl-comment"># }</span></pre>
+    </div>
+
+    <div class="code-block">
+        <div class="code-block-header">Use generated types<button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+        <pre><span class="hl-keyword">import type</span> { <span class="hl-type">Article</span> } <span class="hl-keyword">from</span> <span class="hl-str">'./htmless.types'</span>;
+<span class="hl-keyword">import</span> { <span class="hl-type">HTMLessClient</span> } <span class="hl-keyword">from</span> <span class="hl-str">'@htmless/core/sdk/client'</span>;
+
+<span class="hl-keyword">const</span> { items } = <span class="hl-keyword">await</span> client.<span class="hl-fn">getEntries</span>&lt;<span class="hl-type">Article</span>&gt;(<span class="hl-str">'article'</span>);
+<span class="hl-comment">// items is typed as Article[]</span></pre>
+    </div>
+</section>
+
+</main>
+
+<script>
+// ─── Navigation ───
+const sidebarLinks = document.querySelectorAll('.sidebar-link');
+const sections = document.querySelectorAll('.doc-section');
+const sidebar = document.getElementById('sidebar');
+const overlay = document.getElementById('sidebarOverlay');
+
+function navigateTo(sectionId) {
+    sections.forEach(s => s.classList.remove('active'));
+    sidebarLinks.forEach(l => l.classList.remove('active'));
+
+    const target = document.getElementById(sectionId);
+    if (target) {
+        target.classList.add('active');
+        window.scrollTo(0, 0);
+    }
+
+    const link = document.querySelector(`.sidebar-link[data-section="${sectionId}"]`);
+    if (link) link.classList.add('active');
+
+    // Close mobile sidebar
+    if (window.innerWidth <= 900) {
+        sidebar.classList.remove('open');
+        overlay.classList.remove('open');
+    }
+
+    // Update URL hash
+    history.pushState(null, '', '#' + sectionId);
+}
+
+sidebarLinks.forEach(link => {
+    link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const section = link.dataset.section;
+        navigateTo(section);
+    });
+});
+
+// Handle initial hash
+if (window.location.hash) {
+    const id = window.location.hash.slice(1);
+    if (document.getElementById(id)) {
+        navigateTo(id);
+    }
+}
+
+// Handle back/forward
+window.addEventListener('popstate', () => {
+    if (window.location.hash) {
+        navigateTo(window.location.hash.slice(1));
+    }
+});
+
+// ─── Mobile sidebar ───
+function toggleSidebar() {
+    sidebar.classList.toggle('open');
+    overlay.classList.toggle('open');
+}
+
+// ─── Copy code ───
+function copyCode(btn) {
+    const pre = btn.closest('.code-block').querySelector('pre');
+    const text = pre.textContent || pre.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        const original = btn.textContent;
+        btn.textContent = 'Copied!';
+        btn.style.color = 'var(--green)';
+        btn.style.borderColor = 'var(--green)';
+        setTimeout(() => {
+            btn.textContent = original;
+            btn.style.color = '';
+            btn.style.borderColor = '';
+        }, 2000);
+    });
+}
+</script>
+
+</body>
+</html>
