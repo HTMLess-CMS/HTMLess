@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
-import { apiGet } from '@/lib/api';
+import { apiGet, getSpaceId } from '@/lib/api';
 import TemplatesPanel from './templates-panel';
 
 /* ------------------------------------------------------------------ */
@@ -35,7 +35,9 @@ interface StepState {
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-const SPACE_ID = 'cmnibacxs0005crr6jxgrt3e8';
+function getActiveSpaceId(): string {
+  return getSpaceId() || 'unknown';
+}
 
 function Badge({ n, status }: { n: number; status: 'done' | 'current' | 'future' }) {
   const bg =
@@ -290,9 +292,12 @@ export default function GuidePage() {
         apiGet<{ data: { id: string }[] }>('/cma/v1/tokens'),
       ]);
 
-      const types = typesRes.status === 'fulfilled' ? (typesRes.value.data ?? []) : [];
-      const entries = entriesRes.status === 'fulfilled' ? (entriesRes.value.data ?? []) : [];
-      const tokens = tokensRes.status === 'fulfilled' ? (tokensRes.value.data ?? []) : [];
+      const typesVal = typesRes.status === 'fulfilled' ? typesRes.value : {} as Record<string, unknown>;
+      const entriesVal = entriesRes.status === 'fulfilled' ? entriesRes.value : {} as Record<string, unknown>;
+      const tokensVal = tokensRes.status === 'fulfilled' ? tokensRes.value : {} as Record<string, unknown>;
+      const types = ((typesVal as Record<string, unknown>).items ?? (typesVal as Record<string, unknown>).data ?? []) as ContentType[];
+      const entries = ((entriesVal as Record<string, unknown>).items ?? (entriesVal as Record<string, unknown>).data ?? []) as Entry[];
+      const tokens = ((tokensVal as Record<string, unknown>).items ?? (tokensVal as Record<string, unknown>).data ?? []) as { id: string }[];
 
       const entriesByType: Record<string, number> = {};
       for (const e of entries) {
@@ -532,9 +537,9 @@ export default function GuidePage() {
                   fontFamily: 'monospace',
                 }}
               >
-                {SPACE_ID}
+                {getActiveSpaceId()}
               </code>
-              <CopyButton text={SPACE_ID} />
+              <CopyButton text={getActiveSpaceId()} />
             </div>
             <Link
               href="/dashboard/tokens"
@@ -685,7 +690,7 @@ function ConnectTabs() {
             code={`import { createClient } from '@htmless/sdk';
 
 const client = createClient({
-  spaceId: '${SPACE_ID}',
+  spaceId: '${getActiveSpaceId()}',
   token: 'YOUR_DELIVERY_TOKEN',
 });
 
@@ -702,7 +707,7 @@ const post = await client.getEntry('post', { slug: 'hello-world' });`}
         <CodeBlock
           label="Fetch entries via curl"
           code={`curl -H "Authorization: Bearer YOUR_TOKEN" \\
-  -H "X-Space-Id: ${SPACE_ID}" \\
+  -H "X-Space-Id: ${getActiveSpaceId()}" \\
   https://your-domain.com/api/cda/v1/content/post`}
         />
       )}

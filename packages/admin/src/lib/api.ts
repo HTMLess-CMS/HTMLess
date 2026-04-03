@@ -1,15 +1,26 @@
 const API_BASE = '/api';
-const SPACE_ID = 'cmnibacxs0005crr6jxgrt3e8';
 
 function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem('htmless_token');
 }
 
+export function getSpaceId(): string {
+  if (typeof window === 'undefined') return '';
+  return localStorage.getItem('htmless_space_id') || '';
+}
+
+export function setSpaceId(id: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('htmless_space_id', id);
+  }
+}
+
 function headers(extra?: Record<string, string>): Record<string, string> {
+  const spaceId = getSpaceId();
   const h: Record<string, string> = {
     'Content-Type': 'application/json',
-    'X-Space-Id': SPACE_ID,
+    ...(spaceId ? { 'X-Space-Id': spaceId } : {}),
     ...extra,
   };
   const token = getToken();

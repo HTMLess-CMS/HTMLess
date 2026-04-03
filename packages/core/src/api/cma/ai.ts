@@ -220,11 +220,24 @@ async function createEntries(
         },
       });
 
+      // Auto-publish: create published version and set state to published
+      const publishedVersion = await tx.entryVersion.create({
+        data: {
+          entryId: newEntry.id,
+          kind: 'published',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          data: item as any,
+          etag: etag + '_pub',
+          createdById: userId,
+        },
+      });
+
       await tx.entryState.create({
         data: {
           entryId: newEntry.id,
-          status: 'draft',
+          status: 'published',
           draftVersionId: version.id,
+          publishedVersionId: publishedVersion.id,
         },
       });
 
@@ -266,7 +279,44 @@ router.post('/generate-schema', async (req: Request, res: Response): Promise<voi
       }
 
       const ids = await materializeSchema(spaceId, schema, req.auth!.userId);
-      res.status(201).json({ ...schema, created: ids });
+
+      // Also create sample entries for key content types
+      const entryResults: Record<string, number> = {};
+      const sampleData: Record<string, Record<string, unknown>[]> = {
+        homepage: [{ heroTitle: 'We Build What Matters', heroSubtitle: 'Quality service. Real results. No shortcuts.', ctaPrimary: 'Get Started', ctaSecondary: 'Learn More', phone: '(555) 000-0000', email: 'hello@yourbusiness.com', address: '123 Main St', whyChooseUs: [{ label: 'Licensed & Insured' }, { label: 'Fast Response' }, { label: 'Satisfaction Guaranteed' }, { label: 'Free Estimates' }, { label: '24/7 Support' }, { label: 'Trusted Since 2010' }], businessName: 'Your Business', stats: [{ value: '500+', label: 'Projects' }, { value: '99%', label: 'Satisfaction' }, { value: '15+', label: 'Years' }, { value: '24/7', label: 'Support' }] }],
+        service: [
+          { title: 'Consultation', description: 'Free initial consultation to understand your needs and goals.', icon: '💬', sortOrder: 1 },
+          { title: 'Custom Solutions', description: 'Tailored strategies designed specifically for your business.', icon: '⚡', sortOrder: 2 },
+          { title: 'Implementation', description: 'Expert execution with clear timelines and milestones.', icon: '🚀', sortOrder: 3 },
+          { title: 'Quality Assurance', description: 'Rigorous testing and review before delivery.', icon: '✅', sortOrder: 4 },
+          { title: 'Ongoing Support', description: 'Dedicated support team available when you need us.', icon: '🛟', sortOrder: 5 },
+          { title: 'Growth Strategy', description: 'Data-driven planning to scale your success.', icon: '📈', sortOrder: 6 },
+        ],
+        testimonial: [
+          { author: 'Alex M.', company: 'CEO, TechCorp', quote: 'Outstanding work. They delivered exactly what we needed, on time.', rating: 5 },
+          { author: 'Sarah K.', company: 'Director, StartupXYZ', quote: 'Professional, responsive, and easy to work with. Highly recommend.', rating: 5 },
+          { author: 'David R.', company: 'Founder, GrowthCo', quote: 'The best investment we made this year. Results speak for themselves.', rating: 5 },
+        ],
+        faq: [
+          { question: 'How do I get started?', answer: 'Contact us for a free consultation. We will discuss your needs and create a plan.' },
+          { question: 'What is included?', answer: 'Every project includes planning, implementation, testing, and ongoing support.' },
+          { question: 'How long does it take?', answer: 'Timelines vary by project. Most are completed within 2-6 weeks.' },
+          { question: 'Do you offer guarantees?', answer: 'Yes, we stand behind our work with a satisfaction guarantee on every project.' },
+        ],
+      };
+
+      for (const [typeKey, items] of Object.entries(sampleData)) {
+        if (ids.contentTypeIds[typeKey]) {
+          try {
+            const result = await createEntries(spaceId, typeKey, items, req.auth!.userId);
+            entryResults[typeKey] = result.created.length;
+          } catch {
+            // Type might not match exactly, skip silently
+          }
+        }
+      }
+
+      res.status(201).json({ ...schema, created: ids, entries: entryResults });
       return;
     }
 

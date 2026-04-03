@@ -5,6 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import type { WhiteLabelConfig } from '../../lib/white-label';
 import { getWhiteLabelConfig } from '../../lib/white-label';
+import { getSpaceId, setSpaceId } from '../../lib/api';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard' },
@@ -33,6 +34,20 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace('/login');
     } else {
       setAuthed(true);
+      // Auto-detect space if not set
+      if (!getSpaceId()) {
+        fetch('/api/cma/v1/spaces', {
+          headers: { 'Authorization': `Bearer ${token}` },
+        })
+          .then(r => r.json())
+          .then(d => {
+            const spaces = d.items || d.data || [];
+            if (spaces.length > 0) {
+              setSpaceId(spaces[0].id);
+            }
+          })
+          .catch(() => {});
+      }
       // Load white-label config once authenticated
       getWhiteLabelConfig().then((config) => {
         if (config) setWhiteLabel(config);
