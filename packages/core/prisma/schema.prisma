@@ -33,6 +33,7 @@ model Space {
   comments           Comment[]
   environments       Environment[]
   redirects          Redirect[]
+  extensionConfigs   ExtensionConfig[]
 
   @@map("spaces")
 }
@@ -458,4 +459,72 @@ model Environment {
 
   @@unique([spaceId, slug])
   @@map("environments")
+}
+
+// ─── Extension Config Storage ───
+
+model ExtensionConfig {
+  id           String   @id @default(cuid())
+  spaceId      String
+  extensionKey String
+  configKey    String
+  value        Json
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, extensionKey, configKey])
+  @@map("extension_configs")
+}
+
+// ─── Marketplace ───
+
+model MarketplaceListing {
+  id              String    @id @default(cuid())
+  extensionKey    String    @unique
+  name            String
+  description     String
+  longDescription String?
+  author          String
+  authorEmail     String?
+  repository      String?
+  homepage        String?
+  iconUrl         String?
+  screenshotUrls  Json?     // string[]
+  category        String    // ai, analytics, commerce, media, seo, notifications, integration, utility
+  tags            Json?     // string[]
+  pricing         String    @default("free") // free, paid, freemium
+  priceMonthly    Int?      // cents
+  license         String    @default("MIT")
+  version         String
+  manifest        Json      // full ExtensionManifest
+  downloads       Int       @default(0)
+  rating          Float?
+  reviewCount     Int       @default(0)
+  status          String    @default("pending") // pending, approved, rejected, suspended
+  rejectionReason String?
+  submittedAt     DateTime  @default(now())
+  approvedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  reviews MarketplaceReview[]
+
+  @@map("marketplace_listings")
+}
+
+model MarketplaceReview {
+  id        String   @id @default(cuid())
+  listingId String
+  userId    String
+  rating    Int      // 1-5
+  title     String?
+  body      String?
+  createdAt DateTime @default(now())
+
+  listing MarketplaceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, userId])
+  @@map("marketplace_reviews")
 }

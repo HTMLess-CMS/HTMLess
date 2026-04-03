@@ -48,10 +48,13 @@ function guessMime(filename: string): string {
 // Serves a stored file by its storage key.
 // Supports optional transform query params (w, h, fm) that are
 // currently no-ops but reserved for future server-side transforms.
+//
+// Express 5 no longer accepts unnamed wildcard routes like `/*`,
+// so we match everything mounted under `/media` and derive the key
+// from the remaining request path instead.
 
-router.get('/*', async (req: Request, res: Response): Promise<void> => {
-  // Express 5 puts the wildcard portion in req.params[0]
-  const storageKey = (req.params as Record<string, string>)[0];
+router.use(async (req: Request, res: Response): Promise<void> => {
+  const storageKey = decodeURIComponent(req.path.replace(/^\/+/, ''));
 
   if (!storageKey) {
     res.status(400).json({ error: 'validation_error', message: 'Storage key is required' });

@@ -13,8 +13,12 @@ const router: IRouter = Router();
  *
  * For now, handlers are simple JSON response stubs;
  * real handler loading will be added in Phase 8.
+ *
+ * Express 5 no longer accepts unnamed wildcard routes like `/*`,
+ * so this handler is mounted on the extension prefix and inspects
+ * the remaining request path directly.
  */
-router.all('/ext/:extensionKey/*', (req: Request, res: Response): void => {
+router.use('/ext/:extensionKey', (req: Request, res: Response): void => {
   const extensionKey = req.params.extensionKey as string;
   const extension = getExtension(extensionKey);
 
@@ -27,7 +31,7 @@ router.all('/ext/:extensionKey/*', (req: Request, res: Response): void => {
   }
 
   // Extract the sub-path after /ext/{extensionKey}/
-  const subPath = '/' + (req.params[0] as string);
+  const subPath = req.path === '/' ? '/' : req.path;
   const method = req.method as 'GET' | 'POST' | 'PATCH' | 'DELETE';
 
   // Check if the extension declares a matching route
