@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTMLess Roadmap - Product Timeline</title>
+    <meta name="description" content="Explore the HTMLess roadmap with completed phases, current milestones, and the delivery performance and realtime work planned next.">
+    <meta name="keywords" content="HTMLess roadmap, headless CMS roadmap, open source CMS timeline, Sanity alternative roadmap, self-hosted CMS plan">
+    <meta name="author" content="HTMLess">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#09090b">
+    <link rel="canonical" href="https://htmless.com/roadmap/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="HTMLess Roadmap - Product Timeline">
+    <meta property="og:description" content="Completed phases, current milestones, and the next delivery and realtime work planned for HTMLess.">
+    <meta property="og:url" content="https://htmless.com/roadmap/">
+    <meta property="og:site_name" content="HTMLess">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HTMLess Roadmap">
+    <meta name="twitter:description" content="See what HTMLess has already finished and what comes next across product, performance, and realtime phases.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg: #09090b;
+            --bg-surface: #17171c;
+            --bg-elevated: #1f2026;
+            --border: #27272a;
+            --border-subtle: #1d1e24;
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dim: #71717a;
+            --accent: #6366f1;
+            --accent-light: #8b93ff;
+            --accent-glow: rgba(99, 102, 241, 0.16);
+            --green: #22c55e;
+            --green-glow: rgba(34, 197, 94, 0.14);
+            --amber: #f59e0b;
+            --amber-glow: rgba(245, 158, 11, 0.14);
+            --cyan: #22d3ee;
+            --cyan-glow: rgba(34, 211, 238, 0.14);
+            --rose: #fb7185;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background:
+                radial-gradient(circle at top center, rgba(99, 102, 241, 0.16), transparent 36%),
+                linear-gradient(180deg, #09090b 0%, #0d0d12 100%);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        code, .mono { font-family: 'JetBrains Mono', monospace; }
+        a { color: inherit; }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(16px) saturate(180%);
+            background: rgba(9, 9, 11, 0.76);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .nav-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            padding: 0.9rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .nav-logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-decoration: none;
+            letter-spacing: -0.03em;
+        }
+        .nav-logo span { color: var(--accent-light); }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            transition: 0.2s;
+        }
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .nav-github {
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .hero {
+            padding: 6.5rem 1.5rem 4rem;
+        }
+        .hero-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.3fr 0.9fr;
+            gap: 2rem;
+            align-items: end;
+        }
+        .hero-copy h1 {
+            font-size: clamp(2.8rem, 6vw, 5rem);
+            font-weight: 900;
+            line-height: 1.02;
+            letter-spacing: -0.05em;
+            margin-bottom: 1.2rem;
+        }
+        .hero-copy h1 span {
+            background: linear-gradient(135deg, var(--accent-light) 0%, var(--cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-copy p {
+            color: var(--text-muted);
+            font-size: 1.08rem;
+            max-width: 720px;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            border: 1px solid var(--border);
+            background: rgba(23, 23, 28, 0.78);
+            border-radius: 999px;
+            padding: 0.45rem 0.95rem;
+            margin-bottom: 1.4rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+        .hero-badge .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 16px var(--green-glow);
+        }
+        .hero-actions {
+            display: flex;
+            gap: 0.9rem;
+            flex-wrap: wrap;
+            margin-top: 1.8rem;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            text-decoration: none;
+            border-radius: 10px;
+            padding: 0.85rem 1.35rem;
+            font-size: 0.92rem;
+            font-weight: 700;
+            transition: 0.2s;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: var(--text);
+            box-shadow: 0 0 24px var(--accent-glow);
+        }
+        .btn-primary:hover { background: var(--accent-light); }
+        .btn-ghost {
+            border: 1px solid var(--border);
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .btn-ghost:hover { border-color: var(--text-muted); }
+
+        .hero-panel {
+            background: rgba(23, 23, 28, 0.84);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.4rem;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+        }
+        .hero-panel h2 {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.11em;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.9rem;
+        }
+        .summary-card {
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            padding: 1rem;
+        }
+        .summary-card strong {
+            display: block;
+            font-size: 1.8rem;
+            letter-spacing: -0.05em;
+            margin-bottom: 0.1rem;
+        }
+        .summary-card span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.86rem;
+        }
+
+        .section {
+            padding: 1rem 1.5rem 5rem;
+        }
+        .section-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5rem;
+            align-items: end;
+            margin-bottom: 2.25rem;
+        }
+        .section-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent-light);
+            margin-bottom: 0.6rem;
+        }
+        .section-title {
+            font-size: clamp(2rem, 4vw, 3rem);
+            line-height: 1.08;
+            letter-spacing: -0.04em;
+        }
+        .section-desc {
+            color: var(--text-muted);
+            max-width: 540px;
+        }
+
+        .legend {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .legend span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.45rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.8rem;
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .legend i {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .legend .done { background: var(--green); }
+        .legend .active { background: var(--accent-light); }
+        .legend .next { background: var(--amber); }
+
+        .month-strip {
+            display: grid;
+            grid-template-columns: repeat(7, minmax(0, 1fr));
+            gap: 0.9rem;
+            margin: 1.5rem 0 2.8rem;
+        }
+        .month-chip {
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 0.95rem 1rem;
+            background: rgba(23, 23, 28, 0.7);
+            min-height: 96px;
+        }
+        .month-chip strong {
+            display: block;
+            font-size: 0.98rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.2rem;
+        }
+        .month-chip span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.82rem;
+            line-height: 1.45;
+        }
+        .month-chip.past {
+            box-shadow: inset 0 0 0 1px rgba(34, 197, 94, 0.08);
+        }
+        .month-chip.current {
+            border-color: rgba(99, 102, 241, 0.35);
+            background: rgba(99, 102, 241, 0.09);
+            box-shadow: 0 0 24px rgba(99, 102, 241, 0.08);
+        }
+        .month-chip.future {
+            box-shadow: inset 0 0 0 1px rgba(245, 158, 11, 0.08);
+        }
+
+        .timeline {
+            position: relative;
+            padding: 0.5rem 0 0;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            width: 2px;
+            background: linear-gradient(180deg, rgba(99, 102, 241, 0.7), rgba(34, 211, 238, 0.2));
+            transform: translateX(-50%);
+        }
+        .phase {
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 86px 1fr;
+            gap: 0;
+            margin-bottom: 2.2rem;
+            align-items: start;
+        }
+        .phase:last-child { margin-bottom: 0; }
+        .phase-marker {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: start;
+            justify-content: center;
+            padding-top: 1.15rem;
+        }
+        .phase-dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 3px solid var(--bg);
+            box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+            z-index: 2;
+        }
+        .phase-card {
+            background: rgba(23, 23, 28, 0.88);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.4rem;
+            box-shadow: 0 24px 50px rgba(0, 0, 0, 0.22);
+        }
+        .phase-card.left { grid-column: 1; margin-right: 1.25rem; }
+        .phase-card.right { grid-column: 3; margin-left: 1.25rem; }
+        .phase-card:hover { border-color: rgba(255, 255, 255, 0.12); }
+        .phase-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: start;
+            margin-bottom: 0.8rem;
+        }
+        .phase-kicker {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 0.35rem;
+        }
+        .phase-time {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 0.32rem 0.58rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text-muted);
+            margin-bottom: 0.65rem;
+        }
+        .phase-card h3 {
+            font-size: 1.35rem;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+        }
+        .phase-status {
+            white-space: nowrap;
+            padding: 0.35rem 0.7rem;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            border: 1px solid transparent;
+        }
+        .status-done {
+            color: var(--green);
+            background: rgba(34, 197, 94, 0.1);
+            border-color: rgba(34, 197, 94, 0.18);
+        }
+        .status-active {
+            color: var(--accent-light);
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.18);
+        }
+        .status-next {
+            color: var(--amber);
+            background: rgba(245, 158, 11, 0.1);
+            border-color: rgba(245, 158, 11, 0.18);
+        }
+        .phase-goal {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            font-size: 0.96rem;
+        }
+        .progress-meta {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            margin-bottom: 0.55rem;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+        .progress-bar span {
+            display: block;
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--accent-light), var(--cyan));
+        }
+        .progress-bar.done span {
+            background: linear-gradient(90deg, #16a34a, #4ade80);
+        }
+        .progress-bar.next span {
+            background: linear-gradient(90deg, #f59e0b, #fbbf24);
+        }
+        .phase-list {
+            list-style: none;
+            display: grid;
+            gap: 0.55rem;
+        }
+        .phase-list li {
+            color: var(--text-muted);
+            font-size: 0.87rem;
+            padding-left: 1rem;
+            position: relative;
+        }
+        .phase-list li::before {
+            content: '';
+            position: absolute;
+            top: 0.62rem;
+            left: 0;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-light);
+        }
+
+        .note-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-top: 3rem;
+        }
+        .note-card {
+            background: rgba(23, 23, 28, 0.84);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 1.2rem;
+        }
+        .note-card h4 {
+            font-size: 1rem;
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.02em;
+        }
+        .note-card p {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+        }
+
+        footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 2rem 1.5rem 3rem;
+        }
+        .footer-inner {
+            max-width: 1180px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .footer-inner p {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+        .footer-links {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .footer-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.84rem;
+        }
+        .footer-links a:hover { color: var(--text); }
+
+        @media (max-width: 980px) {
+            .hero-inner,
+            .note-grid,
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .month-strip {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+            .section-header {
+                flex-direction: column;
+                align-items: start;
+            }
+            .timeline::before {
+                left: 18px;
+                transform: none;
+            }
+            .phase {
+                grid-template-columns: 36px 1fr;
+                gap: 0.9rem;
+                margin-bottom: 1.4rem;
+            }
+            .phase-marker {
+                grid-column: 1;
+                justify-content: flex-start;
+                padding-top: 1rem;
+            }
+            .phase-card.left,
+            .phase-card.right {
+                grid-column: 2;
+                margin: 0;
+            }
+        }
+        @media (max-width: 640px) {
+            .nav-inner {
+                padding: 0.9rem 1rem;
+                align-items: start;
+                flex-direction: column;
+            }
+            .hero {
+                padding: 5rem 1rem 3rem;
+            }
+            .month-strip {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+            .section,
+            footer {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+            .hero-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn { width: 100%; }
+            .phase-head {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-logo">HTML<span>ess</span></a>
+            <div class="nav-links">
+                <a href="/" aria-label="Home">Home</a>
+                <a href="/roadmap/" class="active">Roadmap</a>
+                <a href="/#sanity">Sanity Comparison</a>
+                <a href="https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener" class="nav-github">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="hero-inner">
+                <div class="hero-copy">
+                    <div class="hero-badge">
+                        <span class="dot"></span>
+                        Updated April 3, 2026
+                    </div>
+                    <h1>HTMLess roadmap with <span>completed phases, current work, and what comes next</span></h1>
+                    <p>
+                        This page keeps the roadmap on the website instead of hiding it in GitHub docs. You can see what has already shipped, what is still being hardened, and how HTMLess plans to close the delivery and realtime gap with Sanity while keeping a self-hosted PostgreSQL core.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="#timeline" class="btn btn-primary">Browse the Timeline</a>
+                        <a href="/" class="btn btn-ghost">Back to Homepage</a>
+                    </div>
+                </div>
+                <aside class="hero-panel">
+                    <h2>Roadmap Snapshot</h2>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <strong>May 8, 2025</strong>
+                            <span>Project start</span>
+                        </div>
+                        <div class="summary-card">
+                            <strong>3</strong>
+                            <span>Completed phases</span>
+                        </div>
+                        <div class="summary-card">
+                            <strong>Apr 2026</strong>
+                            <span>Current checkpoint</span>
+                        </div>
+                        <div class="summary-card">
+                            <strong>Phase 9</strong>
+                            <span>Next big performance push</span>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="section" id="timeline">
+            <div class="section-inner">
+                <div class="section-header">
+                    <div>
+                        <p class="section-label">Timeline</p>
+                        <h2 class="section-title">From foundation to best-in-class CMS</h2>
+                    </div>
+                    <div class="legend" aria-label="Roadmap status legend">
+                        <span><i class="done"></i> Completed</span>
+                        <span><i class="active"></i> Active / Mostly complete</span>
+                        <span><i class="next"></i> Planned next</span>
+                    </div>
+                </div>
+
+                <div class="month-strip" aria-label="HTMLess roadmap months">
+                    <div class="month-chip past">
+                        <strong>May 8, 2025</strong>
+                        <span>Project kickoff and the first foundation sprint</span>
+                    </div>
+                    <div class="month-chip past">
+                        <strong>Jul 2025</strong>
+                        <span>Editorial workflow, preview, and publish mechanics</span>
+                    </div>
+                    <div class="month-chip past">
+                        <strong>Sep 2025</strong>
+                        <span>Media pipeline and delivery-focused content work</span>
+                    </div>
+                    <div class="month-chip past">
+                        <strong>Nov 2025</strong>
+                        <span>Structured content blocks and portable rich content</span>
+                    </div>
+                    <div class="month-chip past">
+                        <strong>Jan 2026</strong>
+                        <span>DX, tooling, auditability, and contributor workflow</span>
+                    </div>
+                    <div class="month-chip current">
+                        <strong>Apr 2026</strong>
+                        <span>Phase 7 hardening, roadmap cleanup, and reality check</span>
+                    </div>
+                    <div class="month-chip future">
+                        <strong>Jul 2026</strong>
+                        <span>Target window for faster CDA delivery and realtime groundwork</span>
+                    </div>
+                    <div class="month-chip future">
+                        <strong>Oct 2026</strong>
+                        <span>Target window for advanced product and editorial features</span>
+                    </div>
+                </div>
+
+                <div class="timeline">
+                    <article class="phase">
+                        <div class="phase-card left">
+                            <div class="phase-head">
+                                <div>
+                                    <div class="phase-kicker">Phase 1</div>
+                                    <div class="phase-time">May-Jun 2025</div>
+                                    <h3>Foundation</h3>
+                                </div>
+                                <span class="phase-status status-done">Completed</span>
+                            </div>
+                            <p class="phase-goal">API skeleton, schema registry, entry CRUD, auth, and the initial monorepo stack.</p>
+                            <div class="progress-meta"><span>Progress</span><span class="mono">12 / 12 complete</span></div>
+                            <div class="progress-bar done"><span style="width: 100%;"></span></div>
+                            <ul class="phase-list">
+                                <li>Monorepo, PostgreSQL, Prisma, and Docker foundation</li>
+                                <li>CMA, CDA, and Preview API skeletons</li>
+                                <li>RBAC, schema registry, and entry CRUD MVP</li>
+                            </ul>
+                        </div>
+                        <div class="phase-marker"><span class="phase-dot" style="background: var(--green);"></span></div>
+                        <div></div>
+                    </article>
+
+                    <article class="phase">
+                        <div></div>
+                        <div class="phase-marker"><span class="phase-dot" style="background: var(--green);"></span></div>
+                        <div class="phase-card right">
+                            <div class="phase-head">
+                                <div>
+                                    <div class="phase-kicker">Phase 2</div>
+                                    <div class="phase-time">Jul-Aug 2025</div>
+                                    <h3>Editorial Core</h3>
+                                </div>
+                                <span class="phase-status status-done">Completed</span>
+                            </div>
+                            <p class="phase-goal">Draft and publish workflow, versions, scheduling, preview flows, and editorial state management.</p>
+                            <div class="progress-meta"><span>Progress</span><span class="mono">9 / 9 complete</span></div>
+                            <div class="progress-bar done"><span style="width: 100%;"></span></div>
+                            <ul class="phase-list">
+                                <li>Version history, autosave, and scheduling</li>
+                                <li>Preview token issuance and preview reads</li>
+                                <li>Concurrency controls and editor-facing preview actions</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="phase">
+                        <div class="phase-card left">
+                            <div class="phase-head">
+                                <div>
+                                    <div class="phase-kicker">Phase 3</div>
+                                    <div class="phase-time">Sep-Oct 2025</div>
+                                    <h3>Media Pipeline</h3>
+                                </div>
+                                <span class="phase-status status-active">Mostly Complete</span>
+                            </div>
+                            <p class="phase-goal">Real uploads, asset metadata, delivery URLs, and media workflows that feel like a real CMS.</p>
+                            <div class="progress-meta"><span>Progress</span><span class="mono">7 / 8 complete</span></div>
+                            <div class="progress-bar"><span style="width: 88%;"></span></div>
+                            <ul class="phase-list">
+                                <li>Real uploads, metadata extraction, and storage abstraction</li>
+                                <li>Media library browsing and search</li>
+                                <li>Remaining gap: inline media picker inside the content editor</li>
+                            </ul>
+                        </div>
+                        <div class="phase-marker"><span class="phase-dot" style="background: var(--accent-light);"></span></div>
+                        <div></div>
+                    </article>
+
+                    <article class="phase">
+                        <div></div>
+                        <div class="phase-marker"><span class="phase-dot" style="background: var(--green);"></span></div>
+                        <div class="phase-card right">
+                            <div class="phase-head">
+                                <div>
+                                    <div class="phase-kicker">Phase 4</div>
+                                    <div class="phase-time">Nov 2025</div>
+                                    <h3>Structured Content Blocks</h3>
+                                </div>
+                                <span class="phase-status status-done">Completed</span>
+                            </div>
+                            <p class="phase-goal">Portable rich content, reusable patterns, and block validation so content is structured instead of trapped in HTML blobs.</p>
+                            <div class="progress-meta"><span>Progress</span><span class="mono">7 / 7 complete</span></div>
+                            <div class="progress-bar done"><span style="width: 100%;"></span></div>
+                            <ul class="phase-list">
+                                <li>Block registry, versioning, and validation</li>
+                                <li>Core blocks plus reusable patterns</li>
+                                <li>Renderer contract for frontend teams</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="phase">
+                        <div class="phase-card left">
+                            <div class="phase-head">
+                                <div>
+                                    <div class="phase-kicker">Phase 5</div>
+                                    <div class="phase-time">Dec 2025</div>
+                                    <h3>Integrations and Extensibility</h3>
+                                </div>
+                                <span class="phase-status status-active">Mostly Complete</span>
+                            </div>
+                            <p class="phase-goal">Webhooks, events, extensions, and the integration surface needed for real-world automation.</p>
+                            <div class="progress-meta"><span>Progress</span><span class="mono">7 / 8 complete</span></div>
+                            <div class="progress-bar"><span style="width: 88%;"></span></div>
+                            <ul class="phase-list">
+                                <li>Event bus, signed webhooks, retries, and delivery logs</li>
+                                <li>Extension manifest and admin extension management</li>
+                                <li>Remaining step: finalize GraphQL plan after Phase 9 query architecture</li>
+                            </ul>
+                        </div>
+                        <div class="phase-marker"><span class="phase-dot" style="background: var(--accent-light);"></span></div>
+                        <div></div>
+                    </article>
+
+                    <article class="phase">
+                        <div></div>
+                        <div class="phase-marker"><span class="phase-dot" style="background: var(--accent-light);"></span></div>
+                        <div class="phase-card right">
+                            <div class="phase-head">
+                                <div>
+                                    <div class="phase-kicker">Phase 6</div>
+                                    <div class="phase-time">Jan 2026</div>
+                                    <h3>Hardening and DX</h3>
+                                </div>
+                                <span class="phase-status status-active">Active</span>
+                            </div>
+                            <p class="phase-goal">Production readiness, developer tooling, contributor experience, and the missing polish around testing and docs.</p>
+                            <div class="progress-meta"><span>Progress</span><span class="mono">6 / 8 complete</span></div>
+                            <div class="progress-bar"><span style="width: 75%;"></span></div>
+                            <ul class="phase-list">
+                                <li>Audit logs, rate limiting, codegen, CLI, and one-command deployment</li>
+                                <li>Contributor guide already in place</li>
+                                <li>Remaining gaps: policy test harness and documentation site</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="phase">
+                        <div class="phase-card left">
+                            <div class="phase-head">
+                                <div>
+                                    <div class="phase-kicker">Phase 7</div>
+                                    <div class="phase-time">Feb-Apr 2026</div>
+                                    <h3>Open Source CMS Reality Check</h3>
+                                </div>
+                                <span class="phase-status status-active">Active</span>
+                            </div>
+                            <p class="phase-goal">Close the gap between roadmap claims and a truly usable open source headless CMS that teams can run with confidence.</p>
+                            <div class="progress-meta"><span>Progress</span><span class="mono">16 / 22 complete</span></div>
+                            <div class="progress-bar"><span style="width: 73%;"></span></div>
+                            <ul class="phase-list">
+                                <li>Core compile, CI, RBAC, preview scope, publish validation, uploads, and webhook delivery are in much better shape now</li>
+                                <li>Admin routes, dashboard stats, and auth protection are already cleaned up</li>
+                                <li>Still open: API tests, security tests, browser smoke tests, CDA contract lock, and v1 release checklist</li>
+                            </ul>
+                        </div>
+                        <div class="phase-marker"><span class="phase-dot" style="background: var(--accent-light);"></span></div>
+                        <div></div>
+                    </article>
+
+                    <article class="phase">
+                        <div></div>
+                        <div class="phase-marker"><span class="phase-dot" style="background: var(--amber);"></span></div>
+                        <div class="phase-card right">
+                            <div class="phase-head">
+                                <div>
+                                    <div class="phase-kicker">Phase 9</div>
+                                    <div class="phase-time">May-Jul 2026</div>
+                                    <h3>Delivery Performance and Realtime</h3>
+                                </div>
+                                <span class="phase-status status-next">Next Big Push</span>
+                            </div>
+                            <p class="phase-goal">Make HTMLess feel much closer to Sanity on delivery speed and live updates without abandoning the PostgreSQL plus REST architecture.</p>
+                            <div class="progress-meta"><span>Focus</span><span class="mono">Performance, cacheability, realtime</span></div>
+                            <div class="progress-bar next"><span style="width: 18%;"></span></div>
+                            <ul class="phase-list">
+                                <li>`published_documents` read model for faster CDA responses</li>
+                                <li>Batched reference resolution, Redis response caching, and CDN invalidation</li>
+                                <li>SSE or WebSocket updates for admin and preview instead of polling</li>
+                            </ul>
+                        </div>
+                    </article>
+
+                    <article class="phase">
+                        <div class="phase-card left">
+                            <div class="phase-head">
+                                <div>
+                                    <div class="phase-kicker">Phase 8</div>
+                                    <div class="phase-time">Aug-Oct 2026</div>
+                                    <h3>Best-In-Class Product Features</h3>
+                                </div>
+                                <span class="phase-status status-next">Planned</span>
+                            </div>
+                            <p class="phase-goal">Add the advanced product capabilities that make HTMLess feel bigger than a prototype and more lovable than the usual CMS choices.</p>
+                            <div class="progress-meta"><span>Progress</span><span class="mono">Planned after Phase 9 foundation</span></div>
+                            <div class="progress-bar next"><span style="width: 12%;"></span></div>
+                            <ul class="phase-list">
+                                <li>Visual builder, localization, collaboration, and richer editorial workflows</li>
+                                <li>Plugins, imports, exports, starter kits, and agency tooling</li>
+                                <li>Builds on top of the delivery and realtime foundation from Phase 9</li>
+                            </ul>
+                        </div>
+                        <div class="phase-marker"><span class="phase-dot" style="background: var(--amber);"></span></div>
+                        <div></div>
+                    </article>
+                </div>
+
+                <div class="note-grid">
+                    <div class="note-card">
+                        <h4>Completed phases stay visible</h4>
+                        <p>The roadmap keeps finished phases on the page so visitors can see real progress, not just promises.</p>
+                    </div>
+                    <div class="note-card">
+                        <h4>Why Phase 9 matters</h4>
+                        <p>It is the bridge between HTMLess being a strong self-hosted CMS and becoming a genuinely fast delivery platform.</p>
+                    </div>
+                    <div class="note-card">
+                        <h4>Roadmap is a living document</h4>
+                        <p>Dates and ordering can evolve, but the current structure is designed to keep architecture, product, and delivery work from interfering with each other.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <p>&copy; 2026 HTMLess. MIT Licensed.</p>
+            <div class="footer-links">
+                <a href="/">Homepage</a>
+                <a href="/#features">Features</a>
+                <a href="/#sanity">Sanity Comparison</a>
+                <a href="https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>

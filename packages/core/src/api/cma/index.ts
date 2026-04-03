@@ -20,6 +20,13 @@ import diffRouter from './diff.js';
 import searchRouter from './search.js';
 import bulkRouter from './bulk.js';
 import importExportRouter from './importexport.js';
+import relationshipsRouter from './relationships.js';
+import redirectsRouter from './redirects.js';
+import aiRouter from './ai.js';
+import commentsRouter from './comments.js';
+import spacesRouter from './spaces.js';
+import environmentsRouter from './environments.js';
+import whiteLabelRouter from './white-label.js';
 
 const router: IRouter = Router();
 
@@ -30,12 +37,17 @@ router.use('/auth', authRouter);
 // Everything below requires authentication
 router.use(authenticate({ allowQueryToken: true }));
 
+// Spaces routes — cross-space, do NOT require X-Space-Id header
+router.use('/spaces', spacesRouter);
+
 // SSE live updates — mounted before audit middleware (read-only stream)
 router.use('/live', liveRouter);
 
 // Audit logging for all CMA write operations
 router.use(auditMiddleware());
 
+router.use('/environments', requirePermission('schema.admin', 'entry.read'), environmentsRouter);
+router.use('/white-label', requirePermission('schema.admin'), whiteLabelRouter);
 router.use('/schemas', requirePermission('schema.admin', 'entry.read'), schemasRouter);
 router.use('/entries', requirePermission('entry.read', 'entry.create'), entriesRouter);
 router.use('/assets', requirePermission('asset.upload', 'entry.read'), assetsRouter);
@@ -48,6 +60,10 @@ router.use('/codegen', codegenRouter);
 router.use('/locales', requirePermission('schema.admin', 'entry.read'), localesRouter);
 router.use('/taxonomies', requirePermission('schema.admin', 'entry.read'), taxonomiesRouter);
 router.use('/entries/:id/diff', requirePermission('entry.read'), diffRouter);
+router.use('/entries/:id', requirePermission('entry.read'), relationshipsRouter);
+router.use('/redirects', requirePermission('entry.read', 'entry.create'), redirectsRouter);
+router.use('/ai', requirePermission('entry.read'), aiRouter);
+router.use('/', requirePermission('entry.read', 'entry.create'), commentsRouter);
 router.use('/search', requirePermission('entry.read'), searchRouter);
 router.use('/bulk', requirePermission('entry.create', 'entry.read'), bulkRouter);
 router.use('/', requirePermission('entry.read', 'entry.create'), importExportRouter);

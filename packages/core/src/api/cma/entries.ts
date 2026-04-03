@@ -261,6 +261,8 @@ router.patch('/:id', requireScope('cma:write'), async (req, res) => {
 
   const { slug } = req.body;
 
+  const oldSlug = entry.slug;
+
   const updated = await prisma.entry.update({
     where: { id: entry.id },
     data: {
@@ -271,6 +273,24 @@ router.patch('/:id', requireScope('cma:write'), async (req, res) => {
       state: true,
     },
   });
+
+  // Auto-create redirect when slug changes
+  if (slug !== undefined && slug !== oldSlug) {
+    await prisma.redirect.upsert({
+      where: { spaceId_fromSlug: { spaceId: spaceId!, fromSlug: oldSlug } },
+      create: {
+        spaceId: spaceId!,
+        fromSlug: oldSlug,
+        toSlug: slug,
+        statusCode: 301,
+      },
+      update: {
+        toSlug: slug,
+      },
+    }).catch(() => {
+      // Non-critical — don't fail the entry update if redirect creation fails
+    });
+  }
 
   res.json({
     id: updated.id,

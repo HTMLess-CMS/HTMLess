@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Router as IRouter } from 'express';
 import { prisma } from '../../db.js';
 import { requireScope } from '../../auth/middleware.js';
+import { getAssetUsage, checkAssetDeletable } from '../../media/usage.js';
 
 const router: IRouter = Router();
 
@@ -149,6 +150,34 @@ router.patch('/:id', requireScope('cma:write'), async (req, res) => {
   });
 
   res.json(asset);
+});
+
+// ─── GET /assets/:id/usage ───
+router.get('/:id/usage', requireScope('cma:read', 'cma:write'), async (req, res) => {
+  const spaceId = getSpaceId(req);
+  if (!spaceId) {
+    res.status(400).json({ error: 'validation_error', message: 'spaceId is required' });
+    return;
+  }
+
+  const asset = await prisma.asset.findFirst({
+    where: { id: req.params.id as string, spaceId },
+  });
+  if (!asset) {
+    res.status(404).json({ error: 'not_found', message: 'Asset not found' });
+    return;
+  }
+
+  const [usage, deletable] = await Promise.all([
+    getAssetUsage(asset.id, spaceId),
+    checkAssetDeletable(asset.id, spaceId),
+  ]);
+
+  res.json({
+    assetId: asset.id,
+    usage,
+    ...deletable,
+  });
 });
 
 // ─── DELETE /assets/:id ───

@@ -2,6 +2,12 @@ import { Router } from 'express';
 import type { Router as IRouter, Request, Response } from 'express';
 import { existsSync, readFileSync } from 'fs';
 import { LocalStorageProvider, getStorageProvider } from '../../media/storage.js';
+import {
+  transformImage,
+  parseTransformParams,
+  buildTransformHeaders,
+} from '../../media/transforms-engine.js';
+import { getPreset } from '../../media/presets.js';
 
 const router: IRouter = Router();
 
@@ -72,11 +78,57 @@ router.get('/*', async (req: Request, res: Response): Promise<void> => {
   const contentType = guessMime(storageKey);
   const fileBuffer = readFileSync(filePath);
 
+  // Parse transform query params (w, h, fit, fm, q, fp_x, fp_y, preset)
+  const query = req.query as Record<string, string | undefined>;
+
+  // If a preset is specified, merge its params (explicit params override preset)
+  let transformParams = parseTransformParams(query);
+  if (query.preset) {
+    const preset = getPreset(query.preset);
+    if (preset) {
+      transformParams = {
+        w: preset.w,
+        h: preset.h,
+        fit: preset.fit,
+        fm: preset.fm,
+        q: preset.q,
+        ...Object.fromEntries(
+          Object.entries(transformParams).filter(([, v]) => v !== undefined),
+        ),
+      };
+    }
+  }
+
+  const hasTransforms =
+    transformParams.w !== undefined ||
+    transformParams.h !== undefined ||
+    transformParams.fit !== undefined ||
+    transformParams.fm !== undefined ||
+    transformParams.q !== undefined;
+
+  let outputBuffer: Buffer = fileBuffer;
+
+  if (hasTransforms) {
+    try {
+      outputBuffer = await transformImage(Buffer.from(fileBuffer), transformParams);
+    } catch (err) {
+      res.status(400).json({
+        error: 'transform_error',
+        message: err instanceof Error ? err.message : 'Invalid transform parameters',
+      });
+      return;
+    }
+  }
+
+  // Build transform headers (describes requested/applied transforms)
+  const transformHeaders = hasTransforms ? buildTransformHeaders(transformParams) : {};
+
   res
     .set('Content-Type', contentType)
-    .set('Content-Length', String(fileBuffer.length))
+    .set('Content-Length', String(outputBuffer.length))
     .set('Cache-Control', 'public, max-age=31536000, immutable')
-    .send(fileBuffer);
+    .set(transformHeaders)
+    .end(outputBuffer);
 });
 
 export default router;

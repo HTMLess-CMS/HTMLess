@@ -6,6 +6,7 @@ import { prisma } from './db.js';
 import cmaRouter from './api/cma/index.js';
 import cdaRouter from './api/cda/index.js';
 import previewRouter from './api/preview/index.js';
+import graphqlRouter from './api/graphql/index.js';
 import extensionRouter from './extensions/router.js';
 import { wireEventHandlers } from './events/wire.js';
 import { apiRateLimiter, loginRateLimiter } from './auth/rate-limit.js';
@@ -29,6 +30,7 @@ app.use('/cma/v1/auth/login', loginRateLimiter);
 app.use('/cma/v1', apiRateLimiter, cmaRouter);
 app.use('/cda/v1', cdaRouter);
 app.use('/preview/v1', previewRouter);
+app.use('/graphql', graphqlRouter);
 app.use('/api/v1', extensionRouter);
 
 // 404 handler
@@ -57,6 +59,7 @@ async function start() {
     console.log(`  CMA: /cma/v1`);
     console.log(`  CDA: /cda/v1`);
     console.log(`  Preview: /preview/v1`);
+    console.log(`  GraphQL: /graphql`);
   });
 }
 

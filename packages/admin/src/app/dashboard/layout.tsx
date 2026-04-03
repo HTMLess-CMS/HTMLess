@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
+import type { WhiteLabelConfig } from '../../lib/white-label';
+import { getWhiteLabelConfig } from '../../lib/white-label';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard' },
@@ -21,6 +23,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const [authed, setAuthed] = useState(false);
+  const [whiteLabel, setWhiteLabel] = useState<WhiteLabelConfig | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem('htmless_token');
@@ -28,6 +31,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace('/login');
     } else {
       setAuthed(true);
+      // Load white-label config once authenticated
+      getWhiteLabelConfig().then((config) => {
+        if (config) setWhiteLabel(config);
+      });
     }
   }, [router]);
 
@@ -63,9 +70,18 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       }}>
         <div style={{ padding: '0 1.25rem', marginBottom: '2rem' }}>
           <Link href="/dashboard" style={{ textDecoration: 'none' }}>
-            <h1 style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text)' }}>
-              HTML<span style={{ color: 'var(--accent)' }}>ess</span>
-            </h1>
+            {whiteLabel?.brandName ? (
+              <h1 style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.03em', color: whiteLabel.primaryColor ?? 'var(--text)' }}>
+                {whiteLabel.logoUrl ? (
+                  <img src={whiteLabel.logoUrl} alt={whiteLabel.brandName} style={{ height: '28px', marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                ) : null}
+                {whiteLabel.brandName}
+              </h1>
+            ) : (
+              <h1 style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.03em', color: 'var(--text)' }}>
+                HTML<span style={{ color: 'var(--accent)' }}>ess</span>
+              </h1>
+            )}
           </Link>
         </div>
         <nav style={{ flex: 1 }}>
@@ -78,8 +94,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 fontSize: '0.875rem',
                 fontWeight: active ? 600 : 400,
                 color: active ? 'var(--text)' : 'var(--text-muted)',
-                background: active ? 'rgba(99,102,241,0.1)' : 'transparent',
-                borderLeft: active ? '2px solid var(--accent)' : '2px solid transparent',
+                background: active ? (whiteLabel?.primaryColor ? `${whiteLabel.primaryColor}1a` : 'rgba(99,102,241,0.1)') : 'transparent',
+                borderLeft: active ? `2px solid ${whiteLabel?.primaryColor ?? 'var(--accent)'}` : '2px solid transparent',
                 textDecoration: 'none',
               }}>
                 {item.label}

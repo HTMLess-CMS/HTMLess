@@ -7,6 +7,7 @@ import assetsRoutes from './assets.js';
 import mediaRoutes from './media.js';
 import blocksRoutes from './blocks.js';
 import taxonomiesRoutes from './taxonomies.js';
+import redirectsRoutes from './redirects.js';
 
 const router: IRouter = Router();
 
@@ -19,5 +20,6 @@ router.use('/assets', assetsRoutes);
 router.use('/media', mediaRoutes);
 router.use('/blocks', blocksRoutes);
 router.use('/taxonomies', taxonomiesRoutes);
+router.use('/redirects', redirectsRoutes);
 
 export default router;

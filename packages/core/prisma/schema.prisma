@@ -10,25 +10,29 @@ datasource db {
 // ─── Spaces (Multi-tenancy) ───
 
 model Space {
-  id          String   @id @default(cuid())
-  name        String
-  slug        String   @unique
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  whiteLabelConfig Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  contentTypes ContentType[]
-  entries      Entry[]
-  assets       Asset[]
-  apiTokens    ApiToken[]
-  previewTokens PreviewToken[]
-  webhooks     Webhook[]
-  roleBindings     RoleBinding[]
+  contentTypes       ContentType[]
+  entries            Entry[]
+  assets             Asset[]
+  apiTokens          ApiToken[]
+  previewTokens      PreviewToken[]
+  webhooks           Webhook[]
+  roleBindings       RoleBinding[]
   publishedDocuments PublishedDocument[]
   blockDefinitions   BlockDefinition[]
   patterns           Pattern[]
-  auditLogs        AuditLog[]
-  locales          Locale[]
-  taxonomies       Taxonomy[]
+  auditLogs          AuditLog[]
+  locales            Locale[]
+  taxonomies         Taxonomy[]
+  comments           Comment[]
+  environments       Environment[]
+  redirects          Redirect[]
 
   @@map("spaces")
 }
@@ -49,6 +53,7 @@ model User {
   previewTokens  PreviewToken[]
   entryVersions  EntryVersion[]
   auditLogs      AuditLog[]
+  comments       Comment[]
 
   @@map("users")
 }
@@ -350,6 +355,22 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+// ─── Redirects ───
+
+model Redirect {
+  id         String   @id @default(cuid())
+  spaceId    String
+  fromSlug   String
+  toSlug     String
+  statusCode Int      @default(301) // 301 or 302
+  createdAt  DateTime @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, fromSlug])
+  @@map("redirects")
+}
+
 // ─── Localization ───
 
 model Locale {
@@ -399,4 +420,42 @@ model TaxonomyTerm {
 
   @@unique([taxonomyId, slug])
   @@map("taxonomy_terms")
+}
+
+// ─── Editorial Collaboration ───
+
+model Comment {
+  id        String   @id @default(cuid())
+  spaceId   String
+  entryId   String
+  userId    String
+  body      String
+  parentId  String?
+  resolved  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  space   Space    @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent  Comment? @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies Comment[] @relation("CommentThread")
+
+  @@index([entryId, createdAt])
+  @@map("comments")
+}
+
+// ─── Environments ───
+
+model Environment {
+  id        String   @id @default(cuid())
+  spaceId   String
+  name      String   // "Production", "Staging", "Development"
+  slug      String   // "production", "staging", "development"
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, slug])
+  @@map("environments")
 }
