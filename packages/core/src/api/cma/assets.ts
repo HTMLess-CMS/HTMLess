@@ -3,6 +3,7 @@ import type { Router as IRouter } from 'express';
 import { prisma } from '../../db.js';
 import { requireScope } from '../../auth/middleware.js';
 import { getAssetUsage, checkAssetDeletable } from '../../media/usage.js';
+import { eventBus } from '../../events/emitter.js';
 
 const router: IRouter = Router();
 
@@ -94,6 +95,8 @@ router.post('/', requireScope('cma:write'), async (req, res) => {
   });
 
   res.status(201).json(asset);
+
+  eventBus.emit('asset.created', { spaceId, userId: req.auth!.userId, data: { assetId: asset.id, filename: asset.filename } });
 });
 
 // ─── GET /assets/:id ───
@@ -197,6 +200,8 @@ router.delete('/:id', requireScope('cma:write'), async (req, res) => {
   }
 
   await prisma.asset.delete({ where: { id: existing.id } });
+
+  eventBus.emit('asset.deleted', { spaceId, userId: req.auth!.userId, data: { assetId: existing.id } });
 
   res.status(204).end();
 });

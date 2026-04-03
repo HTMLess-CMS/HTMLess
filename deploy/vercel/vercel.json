@@ -1,0 +1,6 @@
+{
+  "buildCommand": "pnpm --filter @htmless/admin build",
+  "outputDirectory": "packages/admin/.next",
+  "framework": "nextjs",
+  "installCommand": "pnpm install"
+}

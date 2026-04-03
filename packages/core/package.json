@@ -1,10 +1,36 @@
 {
   "name": "@htmless/core",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "type": "module",
+  "description": "HTMLess headless CMS core — API server, auth, content schemas, delivery, and preview",
+  "main": "dist/server.js",
+  "types": "dist/server.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/server.js",
+      "types": "./dist/server.d.ts"
+    },
+    "./sdk": {
+      "import": "./dist/sdk/client.js",
+      "types": "./dist/sdk/client.d.ts"
+    },
+    "./blocks": {
+      "import": "./dist/blocks/renderer-sdk.js",
+      "types": "./dist/blocks/renderer-sdk.d.ts"
+    }
+  },
   "bin": {
     "htmless": "dist/cli/index.js"
+  },
+  "files": [
+    "dist/",
+    "prisma/",
+    "package.json",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "tsx watch src/server.ts",
@@ -14,6 +40,23 @@
     "lint": "eslint src/",
     "prisma": "prisma"
   },
+  "keywords": [
+    "headless-cms",
+    "cms",
+    "content-management",
+    "api",
+    "rest",
+    "graphql",
+    "prisma",
+    "express"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HTMLess-CMS/HTMLess"
+  },
+  "homepage": "https://htmless.com",
+  "author": "HTMLess <hello@htmless.com>",
+  "license": "MIT",
   "dependencies": {
     "@prisma/client": "^6.5.0",
     "bcryptjs": "^2.4.3",

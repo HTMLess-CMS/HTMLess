@@ -1,0 +1,36 @@
+{
+  "name": "create-htmless",
+  "version": "0.1.0",
+  "description": "Scaffold a new HTMLess CMS project",
+  "type": "module",
+  "bin": {
+    "create-htmless": "index.js"
+  },
+  "files": [
+    "index.js",
+    "package.json",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "keywords": [
+    "htmless",
+    "headless-cms",
+    "cms",
+    "create",
+    "scaffold",
+    "docker"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HTMLess-CMS/HTMLess",
+    "directory": "packages/create-htmless"
+  },
+  "homepage": "https://htmless.com",
+  "author": "HTMLess <hello@htmless.com>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -38,7 +38,7 @@ export class LocalStorageProvider implements StorageProvider {
   }
 
   getUrl(key: string): string {
-    return `/media/${key}`;
+    return `/cda/v1/media/${key}`;
   }
 
   /** Resolve a storage key to an absolute path on disk. */

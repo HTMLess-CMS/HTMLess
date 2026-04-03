@@ -4,6 +4,7 @@ import express from 'express';
 import { randomUUID, createHash } from 'crypto';
 import { prisma } from '../../db.js';
 import { requireScope } from '../../auth/middleware.js';
+import { eventBus } from '../../events/emitter.js';
 import { getStorageProvider } from '../../media/storage.js';
 import { extractMetadata } from '../../media/metadata.js';
 
@@ -168,6 +169,8 @@ router.post(
       ...asset,
       url,
     });
+
+    eventBus.emit('asset.created', { spaceId, userId: req.auth!.userId, data: { assetId: asset.id, filename: asset.filename } });
   },
 );
 

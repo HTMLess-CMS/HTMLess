@@ -6,6 +6,7 @@ import { requireScope } from '../../auth/middleware.js';
 import { validateEntryData, validateForPublish } from '../../schema/validator.js';
 import { materializeEntry, dematerializeEntry } from '../../content/materializer.js';
 import { invalidateByType } from '../../content/cache.js';
+import { eventBus } from '../../events/emitter.js';
 import { getCDNProvider } from '../../cache/cdn-purge.js';
 
 const router: IRouter = Router();
@@ -196,6 +197,8 @@ router.post('/', requireScope('cma:write'), async (req, res) => {
     createdAt: entry.createdAt,
     updatedAt: entry.updatedAt,
   });
+
+  eventBus.emit('entry.created', { spaceId, userId: req.auth!.userId, data: { entryId: entry.id, typeKey: contentTypeKey, slug } });
 });
 
 // ─── GET /entries/:id ───
@@ -321,6 +324,8 @@ router.delete('/:id', requireScope('cma:write'), async (req, res) => {
 
   await prisma.entry.delete({ where: { id: entry.id } });
 
+  eventBus.emit('entry.deleted', { spaceId, userId: req.auth!.userId, data: { entryId: entry.id } });
+
   res.status(204).end();
 });
 
@@ -402,6 +407,8 @@ router.post('/:id/save-draft', requireScope('cma:write'), async (req, res) => {
     etag: version.etag,
     createdAt: version.createdAt,
   });
+
+  eventBus.emit('entry.draftSaved', { spaceId, userId: req.auth!.userId, data: { entryId: entry.id, versionId: version.id } });
 });
 
 // ─── POST /entries/:id/publish ───
@@ -511,6 +518,8 @@ router.post('/:id/publish', requireScope('cma:write'), async (req, res) => {
     status: 'published',
     createdAt: publishedVersion.createdAt,
   });
+
+  eventBus.emit('entry.published', { spaceId, userId: req.auth!.userId, data: { entryId: entry.id, publishedVersionId: publishedVersion.id, slug: entry.slug } });
 });
 
 // ─── POST /entries/:id/unpublish ───
@@ -570,6 +579,8 @@ router.post('/:id/unpublish', requireScope('cma:write'), async (req, res) => {
     status: 'draft',
     message: 'Entry unpublished successfully',
   });
+
+  eventBus.emit('entry.unpublished', { spaceId, userId: req.auth!.userId, data: { entryId: entry.id } });
 });
 
 // ─── POST /entries/:id/schedule ───

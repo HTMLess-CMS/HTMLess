@@ -1,0 +1,44 @@
+{
+  "name": "htmless",
+  "version": "0.1.0",
+  "description": "TypeScript SDK for HTMLess headless CMS",
+  "type": "module",
+  "main": "dist/client.js",
+  "types": "dist/client.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/client.js",
+      "types": "./dist/client.d.ts"
+    }
+  },
+  "files": [
+    "dist/",
+    "package.json",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "htmless",
+    "headless-cms",
+    "sdk",
+    "typescript",
+    "content-api"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HTMLess-CMS/HTMLess",
+    "directory": "packages/sdk"
+  },
+  "homepage": "https://htmless.com",
+  "author": "HTMLess <hello@htmless.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
