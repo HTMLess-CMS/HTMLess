@@ -937,117 +937,127 @@
     <!-- GET STARTED -->
     <section style="padding:5rem 2rem;background:var(--bg)" id="get-started">
         <div class="container">
-            <div style="text-align:center;margin-bottom:3.5rem">
+            <div style="text-align:center;margin-bottom:3rem">
                 <p class="section-label">Get Started</p>
                 <h2 class="section-title">Running in under 2 minutes</h2>
-                <p class="section-desc" style="max-width:600px;margin:0 auto">Three ways to launch HTMLess. Pick your path.</p>
             </div>
 
-            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:1.5rem;max-width:1100px;margin:0 auto">
+            <!-- Terminal Window -->
+            <div style="max-width:720px;margin:0 auto">
+                <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.4)">
 
-                <!-- Docker Hub -->
-                <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:2rem;position:relative;overflow:hidden">
-                    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--accent))"></div>
-                    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem">
-                        <span style="font-size:1.5rem">&#128051;</span>
-                        <div>
-                            <h3 style="font-size:1.1rem;font-weight:700">Docker Hub</h3>
-                            <p style="font-size:0.75rem;color:var(--text-dim)">Self-host the full stack</p>
+                    <!-- Tab bar -->
+                    <div style="display:flex;align-items:center;background:var(--bg-elevated);border-bottom:1px solid var(--border);padding:0">
+                        <div style="display:flex;align-items:center;gap:6px;padding:12px 16px">
+                            <span style="width:12px;height:12px;border-radius:50%;background:#ef4444"></span>
+                            <span style="width:12px;height:12px;border-radius:50%;background:#f59e0b"></span>
+                            <span style="width:12px;height:12px;border-radius:50%;background:#22c55e"></span>
                         </div>
+                        <button onclick="switchInstallTab('docker')" id="itab-docker" style="padding:10px 20px;font-size:0.8rem;font-weight:600;font-family:inherit;background:var(--bg-surface);color:var(--text);border:none;border-bottom:2px solid var(--accent);cursor:pointer;transition:all 0.15s">Docker</button>
+                        <button onclick="switchInstallTab('npm')" id="itab-npm" style="padding:10px 20px;font-size:0.8rem;font-weight:600;font-family:inherit;background:transparent;color:var(--text-dim);border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s">npm</button>
+                        <button onclick="switchInstallTab('cloud')" id="itab-cloud" style="padding:10px 20px;font-size:0.8rem;font-weight:600;font-family:inherit;background:transparent;color:var(--text-dim);border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s">Cloud</button>
                     </div>
-                    <div class="mono" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:0.78rem;line-height:1.9;margin-bottom:1.25rem;overflow-x:auto">
-                        <span style="color:var(--text-dim)"># Pull images</span><br>
-                        <span style="color:var(--accent-light)">$</span> docker pull poorman/htmless-api<br>
-                        <span style="color:var(--accent-light)">$</span> docker pull poorman/htmless-admin<br>
-                        <span style="color:var(--accent-light)">$</span> docker pull poorman/htmless-worker<br><br>
-                        <span style="color:var(--text-dim)"># Or use the compose file</span><br>
-                        <span style="color:var(--accent-light)">$</span> curl -O https://raw.githubusercontent.com/<br>
-                        &nbsp;&nbsp;HTMLess-CMS/HTMLess/main/docker/<br>
-                        &nbsp;&nbsp;docker-compose.hub.yml<br>
-                        <span style="color:var(--accent-light)">$</span> docker compose -f docker-compose.hub.yml up -d<br><br>
-                        <span style="color:var(--green)">&#10003;</span> API at <span style="color:var(--accent-light)">localhost:3000</span><br>
-                        <span style="color:var(--green)">&#10003;</span> Admin at <span style="color:var(--accent-light)">localhost:3001</span>
-                    </div>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-                        <a href="https://hub.docker.com/u/poorman" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-weight:500;text-decoration:none">View on Docker Hub</a>
-                    </div>
-                </div>
 
-                <!-- npm -->
-                <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:2rem;position:relative;overflow:hidden">
-                    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#cb3837,#f59e0b)"></div>
-                    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem">
-                        <span style="font-size:1.5rem">&#128230;</span>
-                        <div>
-                            <h3 style="font-size:1.1rem;font-weight:700">npm</h3>
-                            <p style="font-size:0.75rem;color:var(--text-dim)">Scaffold a new project instantly</p>
-                        </div>
-                    </div>
-                    <div class="mono" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:0.78rem;line-height:1.9;margin-bottom:1.25rem;overflow-x:auto">
-                        <span style="color:var(--text-dim)"># Create a new project</span><br>
+                    <!-- Docker panel -->
+                    <div id="ipanel-docker" class="mono" style="padding:1.5rem 1.75rem;font-size:0.82rem;line-height:2">
+                        <span style="color:var(--text-dim)">&#35; One command. Full stack.</span><br>
                         <span style="color:var(--accent-light)">$</span> npx create-htmless my-cms<br>
-                        <span style="color:var(--accent-light)">$</span> cd my-cms<br>
-                        <span style="color:var(--accent-light)">$</span> docker compose up -d<br><br>
-                        <span style="color:var(--text-dim)"># Or install the SDK</span><br>
-                        <span style="color:var(--accent-light)">$</span> npm i @htmless/sdk<br><br>
-                        <span style="color:var(--text-dim)"># Or install the full CMS</span><br>
-                        <span style="color:var(--accent-light)">$</span> npm i @htmless/core<br><br>
-                        <span style="color:var(--green)">&#10003;</span> Ready to build
+                        <span style="color:var(--accent-light)">$</span> cd my-cms && docker compose up -d<br>
+                        <br>
+                        <span style="color:var(--green)">&#10003;</span> <strong style="color:var(--text)">API</strong> <span style="color:var(--text-muted)">running at</span> <span style="color:var(--accent-light)">localhost:3000</span><br>
+                        <span style="color:var(--green)">&#10003;</span> <strong style="color:var(--text)">Admin</strong> <span style="color:var(--text-muted)">running at</span> <span style="color:var(--accent-light)">localhost:3001</span><br>
+                        <span style="color:var(--green)">&#10003;</span> <strong style="color:var(--text)">Postgres + Redis</strong> <span style="color:var(--text-muted)">included</span><br>
+                        <br>
+                        <span style="color:var(--text-dim)">&#35; Or pull pre-built images directly</span><br>
+                        <span style="color:var(--accent-light)">$</span> docker pull poorman/htmless-api<br>
+                        <span style="color:var(--accent-light)">$</span> docker pull poorman/htmless-admin
                     </div>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-                        <a href="https://www.npmjs.com/package/@htmless/core" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-weight:500;text-decoration:none">@htmless/core</a>
-                        <a href="https://www.npmjs.com/package/@htmless/sdk" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-weight:500;text-decoration:none">@htmless/sdk</a>
-                        <a href="https://www.npmjs.com/package/create-htmless" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 0.9rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:0.8rem;font-weight:500;text-decoration:none">create-htmless</a>
-                    </div>
-                </div>
 
-                <!-- 1-Click Deploy -->
-                <div style="background:var(--bg-surface);border:1px solid var(--border);border-radius:12px;padding:2rem;position:relative;overflow:hidden">
-                    <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--green),var(--cyan))"></div>
-                    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem">
-                        <span style="font-size:1.5rem">&#9889;</span>
-                        <div>
-                            <h3 style="font-size:1.1rem;font-weight:700">1-Click Deploy</h3>
-                            <p style="font-size:0.75rem;color:var(--text-dim)">Launch on your favorite platform</p>
+                    <!-- npm panel -->
+                    <div id="ipanel-npm" class="mono" style="padding:1.5rem 1.75rem;font-size:0.82rem;line-height:2;display:none">
+                        <span style="color:var(--text-dim)">&#35; Install the full CMS server</span><br>
+                        <span style="color:var(--accent-light)">$</span> npm i @htmless/core<br>
+                        <br>
+                        <span style="color:var(--text-dim)">&#35; Or just the TypeScript SDK for your frontend</span><br>
+                        <span style="color:var(--accent-light)">$</span> npm i @htmless/sdk<br>
+                        <br>
+                        <span style="color:var(--text-dim)">&#35; Use in your app</span><br>
+                        <span style="color:#c084fc">import</span> { HTMLessClient } <span style="color:#c084fc">from</span> <span style="color:var(--green)">'@htmless/sdk'</span><br>
+                        <br>
+                        <span style="color:#c084fc">const</span> cms = <span style="color:#c084fc">new</span> <span style="color:var(--cyan)">HTMLessClient</span>({<br>
+                        &nbsp;&nbsp;baseUrl: <span style="color:var(--green)">'https://api.yoursite.com'</span>,<br>
+                        &nbsp;&nbsp;spaceId: <span style="color:var(--green)">'your-space-id'</span><br>
+                        })<br>
+                        <br>
+                        <span style="color:#c084fc">const</span> posts = <span style="color:#c084fc">await</span> cms.<span style="color:var(--amber)">getEntries</span>(<span style="color:var(--green)">'article'</span>)
+                    </div>
+
+                    <!-- Cloud panel -->
+                    <div id="ipanel-cloud" style="padding:1.5rem 1.75rem;display:none">
+                        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:1.25rem">Deploy the full stack with one click.</p>
+                        <div style="display:flex;flex-direction:column;gap:0.625rem">
+                            <a href="https://railway.app/template" target="_blank" rel="noopener" style="display:flex;align-items:center;padding:0.875rem 1.125rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:border-color 0.2s,background 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--bg-elevated)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
+                                <div style="flex:1">
+                                    <strong style="color:var(--text);font-size:0.9rem;display:block;margin-bottom:2px">Railway</strong>
+                                    <span style="color:var(--text-dim);font-size:0.75rem">API + Worker + Postgres + Redis</span>
+                                </div>
+                                <span style="color:var(--green);font-size:0.7rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:4px 10px;background:rgba(34,197,94,0.1);border-radius:4px">Full Stack</span>
+                            </a>
+                            <a href="https://render.com/deploy?repo=https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener" style="display:flex;align-items:center;padding:0.875rem 1.125rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:border-color 0.2s,background 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--bg-elevated)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
+                                <div style="flex:1">
+                                    <strong style="color:var(--text);font-size:0.9rem;display:block;margin-bottom:2px">Render</strong>
+                                    <span style="color:var(--text-dim);font-size:0.75rem">Blueprint with managed database</span>
+                                </div>
+                                <span style="color:var(--green);font-size:0.7rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:4px 10px;background:rgba(34,197,94,0.1);border-radius:4px">Full Stack</span>
+                            </a>
+                            <a href="https://vercel.com/new/clone?repository-url=https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener" style="display:flex;align-items:center;padding:0.875rem 1.125rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:border-color 0.2s,background 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--bg-elevated)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
+                                <div style="flex:1">
+                                    <strong style="color:var(--text);font-size:0.9rem;display:block;margin-bottom:2px">Vercel</strong>
+                                    <span style="color:var(--text-dim);font-size:0.75rem">Admin UI (Next.js)</span>
+                                </div>
+                                <span style="color:var(--accent-light);font-size:0.7rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:4px 10px;background:var(--accent-glow);border-radius:4px">Frontend</span>
+                            </a>
+                            <a href="https://app.netlify.com/start/deploy?repository=https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener" style="display:flex;align-items:center;padding:0.875rem 1.125rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:border-color 0.2s,background 0.2s" onmouseover="this.style.borderColor='var(--accent)';this.style.background='var(--bg-elevated)'" onmouseout="this.style.borderColor='var(--border)';this.style.background='var(--bg)'">
+                                <div style="flex:1">
+                                    <strong style="color:var(--text);font-size:0.9rem;display:block;margin-bottom:2px">Netlify</strong>
+                                    <span style="color:var(--text-dim);font-size:0.75rem">Admin UI (Next.js)</span>
+                                </div>
+                                <span style="color:var(--accent-light);font-size:0.7rem;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:4px 10px;background:var(--accent-glow);border-radius:4px">Frontend</span>
+                            </a>
                         </div>
                     </div>
-                    <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.25rem">
-                        <a href="https://railway.app/template" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:border-color 0.2s">
-                            <strong style="color:var(--text);font-size:0.9rem">Railway</strong>
-                            <span style="color:var(--text-dim);font-size:0.75rem;flex:1">Full stack &mdash; API + Postgres + Redis</span>
-                            <span style="color:var(--accent-light);font-size:0.75rem">&rarr;</span>
-                        </a>
-                        <a href="https://render.com/deploy" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:border-color 0.2s">
-                            <strong style="color:var(--text);font-size:0.9rem">Render</strong>
-                            <span style="color:var(--text-dim);font-size:0.75rem;flex:1">Blueprint with managed database</span>
-                            <span style="color:var(--accent-light);font-size:0.75rem">&rarr;</span>
-                        </a>
-                        <a href="https://vercel.com/new/clone?repository-url=https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:border-color 0.2s">
-                            <strong style="color:var(--text);font-size:0.9rem">Vercel</strong>
-                            <span style="color:var(--text-dim);font-size:0.75rem;flex:1">Admin UI deployment</span>
-                            <span style="color:var(--accent-light);font-size:0.75rem">&rarr;</span>
-                        </a>
-                        <a href="https://app.netlify.com/start/deploy?repository=https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener" style="display:flex;align-items:center;gap:0.75rem;padding:0.75rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;text-decoration:none;transition:border-color 0.2s">
-                            <strong style="color:var(--text);font-size:0.9rem">Netlify</strong>
-                            <span style="color:var(--text-dim);font-size:0.75rem;flex:1">Admin UI deployment</span>
-                            <span style="color:var(--accent-light);font-size:0.75rem">&rarr;</span>
-                        </a>
-                    </div>
-                    <p style="font-size:0.7rem;color:var(--text-dim)">Config files in <code style="background:var(--bg-elevated);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.7rem">deploy/</code> folder</p>
+
                 </div>
 
-            </div>
-
-            <!-- After deploy -->
-            <div style="max-width:700px;margin:2.5rem auto 0;text-align:center">
-                <p style="font-size:0.9rem;color:var(--text-muted);margin-bottom:1rem">After deploy, log in to the admin panel:</p>
-                <div class="mono" style="display:inline-block;background:var(--bg-surface);border:1px solid var(--border);border-radius:8px;padding:0.75rem 1.5rem;font-size:0.8rem;color:var(--text-muted)">
-                    Email: <span style="color:var(--text)">admin@htmless.com</span> &nbsp;&middot;&nbsp; Password: <span style="color:var(--text)">admin123</span>
+                <!-- Login hint -->
+                <div style="text-align:center;margin-top:1.5rem">
+                    <p style="font-size:0.8rem;color:var(--text-dim)">
+                        Default login: <code class="mono" style="color:var(--text-muted);background:var(--bg-surface);padding:2px 6px;border-radius:4px;font-size:0.78rem">admin@htmless.com</code> / <code class="mono" style="color:var(--text-muted);background:var(--bg-surface);padding:2px 6px;border-radius:4px;font-size:0.78rem">admin123</code>
+                    </p>
                 </div>
-                <p style="font-size:0.7rem;color:var(--text-dim);margin-top:0.75rem">Change these immediately in production</p>
+
+                <!-- Package links -->
+                <div style="display:flex;justify-content:center;gap:0.75rem;margin-top:1.25rem;flex-wrap:wrap">
+                    <a href="https://www.npmjs.com/package/@htmless/core" target="_blank" rel="noopener" style="font-size:0.75rem;color:var(--text-dim);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:6px;transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--text-dim)'" onmouseout="this.style.borderColor='var(--border)'">@htmless/core</a>
+                    <a href="https://www.npmjs.com/package/@htmless/sdk" target="_blank" rel="noopener" style="font-size:0.75rem;color:var(--text-dim);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:6px;transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--text-dim)'" onmouseout="this.style.borderColor='var(--border)'">@htmless/sdk</a>
+                    <a href="https://hub.docker.com/r/poorman/htmless-api" target="_blank" rel="noopener" style="font-size:0.75rem;color:var(--text-dim);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:6px;transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--text-dim)'" onmouseout="this.style.borderColor='var(--border)'">Docker Hub</a>
+                    <a href="https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener" style="font-size:0.75rem;color:var(--text-dim);text-decoration:none;padding:6px 12px;border:1px solid var(--border);border-radius:6px;transition:border-color 0.2s" onmouseover="this.style.borderColor='var(--text-dim)'" onmouseout="this.style.borderColor='var(--border)'">GitHub</a>
+                </div>
             </div>
         </div>
     </section>
+
+    <script>
+    function switchInstallTab(tab) {
+        ['docker','npm','cloud'].forEach(function(t) {
+            document.getElementById('ipanel-' + t).style.display = t === tab ? '' : 'none';
+            var btn = document.getElementById('itab-' + t);
+            btn.style.background = t === tab ? 'var(--bg-surface)' : 'transparent';
+            btn.style.color = t === tab ? 'var(--text)' : 'var(--text-dim)';
+            btn.style.borderBottomColor = t === tab ? 'var(--accent)' : 'transparent';
+        });
+    }
+    </script>
 
     <section class="tabs-section" id="fit">
         <div class="container">
@@ -1399,7 +1409,7 @@
         </div>
         <div class="footer-bottom">
             <p>&copy; 2026 HTMLess. MIT Licensed.</p>
-            <p>Crafted by <a href="https://webdesignerchicago.com" target="_blank" rel="noopener">Web Designer Chicago</a></p>
+            <p>Crafted by <a href="https://pbieda.com" target="_blank" rel="noopener">pbieda</a></p>
         </div>
     </footer>
 
