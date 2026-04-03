@@ -22,11 +22,15 @@ const NAV_ITEMS = [
   { label: 'Settings', href: '/dashboard/settings' },
 ];
 
+interface SpaceInfo { id: string; name: string; slug: string; }
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [authed, setAuthed] = useState(false);
   const [whiteLabel, setWhiteLabel] = useState<WhiteLabelConfig | null>(null);
+  const [spaces, setSpaces] = useState<SpaceInfo[]>([]);
+  const [currentSpaceId, setCurrentSpaceId] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('htmless_token');
@@ -34,20 +38,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       router.replace('/login');
     } else {
       setAuthed(true);
-      // Auto-detect space if not set
-      if (!getSpaceId()) {
-        fetch('/api/cma/v1/spaces', {
-          headers: { 'Authorization': `Bearer ${token}` },
+      // Always fetch spaces and set the active one
+      fetch('/api/cma/v1/spaces', {
+        headers: { 'Authorization': `Bearer ${token}` },
+      })
+        .then(r => r.json())
+        .then(d => {
+          const spaceList: SpaceInfo[] = (d.items || d.data || []).map((s: Record<string, string>) => ({ id: s.id, name: s.name, slug: s.slug }));
+          setSpaces(spaceList);
+          const saved = getSpaceId();
+          const match = spaceList.find(s => s.id === saved);
+          if (match) {
+            setCurrentSpaceId(match.id);
+          } else if (spaceList.length > 0) {
+            // Pick the last space (most recently created), not the default
+            const pick = spaceList[spaceList.length - 1];
+            setSpaceId(pick.id);
+            setCurrentSpaceId(pick.id);
+          }
         })
-          .then(r => r.json())
-          .then(d => {
-            const spaces = d.items || d.data || [];
-            if (spaces.length > 0) {
-              setSpaceId(spaces[0].id);
-            }
-          })
-          .catch(() => {});
-      }
+        .catch(() => {});
       // Load white-label config once authenticated
       getWhiteLabelConfig().then((config) => {
         if (config) setWhiteLabel(config);
@@ -122,6 +132,33 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             ?
           </Link>
         </div>
+        {spaces.length > 1 && (
+          <div style={{ padding: '0 1.25rem', marginBottom: '1rem' }}>
+            <select
+              value={currentSpaceId}
+              onChange={(e) => {
+                const newId = e.target.value;
+                setSpaceId(newId);
+                setCurrentSpaceId(newId);
+                window.location.reload();
+              }}
+              style={{
+                width: '100%',
+                padding: '0.4rem 0.6rem',
+                background: 'var(--bg)',
+                border: '1px solid var(--border)',
+                borderRadius: '6px',
+                color: 'var(--text)',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+              }}
+            >
+              {spaces.map(s => (
+                <option key={s.id} value={s.id}>{s.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <nav style={{ flex: 1 }}>
           {NAV_ITEMS.map((item) => {
             const active = isActive(item.href);
