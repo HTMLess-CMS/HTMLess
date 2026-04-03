@@ -21,6 +21,9 @@ export async function validateEntryData(
   const errors: ValidationError[] = [];
 
   for (const field of fields) {
+    // Skip slug fields — slug is managed at the entry level, not in the data payload
+    if (field.type === 'slug') continue;
+
     const value = data[field.key];
 
     // Required check

@@ -163,7 +163,7 @@ router.post(
     });
 
     // ── Build delivery URL ──
-    const url = storage.getUrl(storageKey);
+    const url = `/cda/v1/media/${storageKey}`;
 
     res.status(201).json({
       ...asset,
