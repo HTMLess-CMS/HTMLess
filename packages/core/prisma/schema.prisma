@@ -27,6 +27,8 @@ model Space {
   blockDefinitions   BlockDefinition[]
   patterns           Pattern[]
   auditLogs        AuditLog[]
+  locales          Locale[]
+  taxonomies       Taxonomy[]
 
   @@map("spaces")
 }
@@ -196,13 +198,14 @@ model EntryVersion {
 }
 
 model EntryState {
-  id                 String    @id @default(cuid())
-  entryId            String    @unique
-  status             String    @default("draft") // draft, published, scheduled, archived
-  draftVersionId     String
-  publishedVersionId String?
-  scheduledAt        DateTime?
-  updatedAt          DateTime  @updatedAt
+  id                    String    @id @default(cuid())
+  entryId               String    @unique
+  status                String    @default("draft") // draft, published, scheduled, archived
+  draftVersionId        String
+  publishedVersionId    String?
+  scheduledAt           DateTime?
+  scheduledUnpublishAt  DateTime?
+  updatedAt             DateTime  @updatedAt
 
   entry            Entry        @relation(fields: [entryId], references: [id], onDelete: Cascade)
   draftVersion     EntryVersion @relation("DraftVersion", fields: [draftVersionId], references: [id])
@@ -345,4 +348,55 @@ model AuditLog {
 
   @@index([spaceId, createdAt(sort: Desc)])
   @@map("audit_logs")
+}
+
+// ─── Localization ───
+
+model Locale {
+  id        String   @id @default(cuid())
+  spaceId   String
+  code      String   // "en", "es", "fr", "de"
+  name      String   // "English", "Spanish"
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  space Space @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+
+  @@unique([spaceId, code])
+  @@map("locales")
+}
+
+// ─── Taxonomies ───
+
+model Taxonomy {
+  id           String   @id @default(cuid())
+  spaceId      String
+  key          String
+  name         String
+  hierarchical Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  space Space          @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  terms TaxonomyTerm[]
+
+  @@unique([spaceId, key])
+  @@map("taxonomies")
+}
+
+model TaxonomyTerm {
+  id         String   @id @default(cuid())
+  taxonomyId String
+  slug       String
+  name       String
+  parentId   String?
+  sortOrder  Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  taxonomy Taxonomy       @relation(fields: [taxonomyId], references: [id], onDelete: Cascade)
+  parent   TaxonomyTerm?  @relation("TermParent", fields: [parentId], references: [id])
+  children TaxonomyTerm[] @relation("TermParent")
+
+  @@unique([taxonomyId, slug])
+  @@map("taxonomy_terms")
 }

@@ -6,6 +6,7 @@ import schemasRoutes from './schemas.js';
 import assetsRoutes from './assets.js';
 import mediaRoutes from './media.js';
 import blocksRoutes from './blocks.js';
+import taxonomiesRoutes from './taxonomies.js';
 
 const router: IRouter = Router();
 
@@ -17,5 +18,6 @@ router.use('/schemas', schemasRoutes);
 router.use('/assets', assetsRoutes);
 router.use('/media', mediaRoutes);
 router.use('/blocks', blocksRoutes);
+router.use('/taxonomies', taxonomiesRoutes);
 
 export default router;

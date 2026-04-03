@@ -64,6 +64,51 @@ async function processScheduledEntries() {
   }
 }
 
+async function processScheduledUnpublishes() {
+  const now = new Date();
+
+  const scheduledStates = await prisma.entryState.findMany({
+    where: {
+      status: 'published',
+      scheduledUnpublishAt: { lte: now },
+    },
+    include: {
+      entry: true,
+    },
+  });
+
+  for (const state of scheduledStates) {
+    try {
+      await prisma.$transaction(async (tx) => {
+        // Update state to draft and clear scheduled unpublish
+        await tx.entryState.update({
+          where: { entryId: state.entryId },
+          data: {
+            status: 'draft',
+            publishedVersionId: null,
+            scheduledUnpublishAt: null,
+          },
+        });
+
+        await tx.entry.update({ where: { id: state.entryId }, data: {} });
+      });
+
+      // Remove from published_documents
+      await prisma.publishedDocument.deleteMany({
+        where: { entryId: state.entryId },
+      });
+
+      console.log(`Unpublished scheduled entry: ${state.entryId} (slug: ${state.entry.slug})`);
+    } catch (err) {
+      console.error(`Failed to unpublish scheduled entry ${state.entryId}:`, err);
+    }
+  }
+
+  if (scheduledStates.length > 0) {
+    console.log(`Processed ${scheduledStates.length} scheduled unpublishes`);
+  }
+}
+
 async function start() {
   await prisma.$connect();
   console.log('HTMLess Worker started');
@@ -71,9 +116,11 @@ async function start() {
 
   // Initial run
   await processScheduledEntries();
+  await processScheduledUnpublishes();
 
   // Poll
   setInterval(processScheduledEntries, POLL_INTERVAL);
+  setInterval(processScheduledUnpublishes, POLL_INTERVAL);
 }
 
 start().catch((err) => {

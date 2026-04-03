@@ -14,6 +14,12 @@ import blocksRouter from './blocks.js';
 import extensionsRouter from './extensions.js';
 import auditRouter from './audit.js';
 import codegenRouter from './codegen.js';
+import localesRouter from './locales.js';
+import taxonomiesRouter from './taxonomies.js';
+import diffRouter from './diff.js';
+import searchRouter from './search.js';
+import bulkRouter from './bulk.js';
+import importExportRouter from './importexport.js';
 
 const router: IRouter = Router();
 
@@ -39,5 +45,11 @@ router.use('/blocks', requirePermission('schema.admin', 'entry.read'), blocksRou
 router.use('/extensions', requirePermission('schema.admin'), extensionsRouter);
 router.use('/audit', requirePermission('schema.admin'), auditRouter);
 router.use('/codegen', codegenRouter);
+router.use('/locales', requirePermission('schema.admin', 'entry.read'), localesRouter);
+router.use('/taxonomies', requirePermission('schema.admin', 'entry.read'), taxonomiesRouter);
+router.use('/entries/:id/diff', requirePermission('entry.read'), diffRouter);
+router.use('/search', requirePermission('entry.read'), searchRouter);
+router.use('/bulk', requirePermission('entry.create', 'entry.read'), bulkRouter);
+router.use('/', requirePermission('entry.read', 'entry.create'), importExportRouter);
 
 export default router;

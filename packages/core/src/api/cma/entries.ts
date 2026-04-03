@@ -560,33 +560,63 @@ router.post('/:id/schedule', requireScope('cma:write'), async (req, res) => {
     return;
   }
 
-  const { publishAt } = req.body;
-  if (!publishAt) {
-    res.status(400).json({ error: 'validation_error', message: 'publishAt (ISO date) is required' });
+  const { publishAt, unpublishAt } = req.body;
+  if (!publishAt && !unpublishAt) {
+    res.status(400).json({ error: 'validation_error', message: 'publishAt or unpublishAt (ISO date) is required' });
     return;
   }
 
-  const scheduledAt = new Date(publishAt);
-  if (isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) {
-    res.status(400).json({ error: 'validation_error', message: 'publishAt must be a valid future date' });
+  let scheduledAt: Date | null = null;
+  let scheduledUnpublishAt: Date | null = null;
+
+  if (publishAt) {
+    scheduledAt = new Date(publishAt);
+    if (isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) {
+      res.status(400).json({ error: 'validation_error', message: 'publishAt must be a valid future date' });
+      return;
+    }
+  }
+
+  if (unpublishAt) {
+    scheduledUnpublishAt = new Date(unpublishAt);
+    if (isNaN(scheduledUnpublishAt.getTime()) || scheduledUnpublishAt <= new Date()) {
+      res.status(400).json({ error: 'validation_error', message: 'unpublishAt must be a valid future date' });
+      return;
+    }
+  }
+
+  // If only unpublishAt is provided, the entry must be published
+  if (!publishAt && unpublishAt && entry.state?.status !== 'published') {
+    res.status(400).json({ error: 'invalid_state', message: 'Entry must be published to schedule an unpublish without a publishAt' });
     return;
+  }
+
+  const updateData: Record<string, unknown> = {};
+  if (scheduledAt) {
+    updateData.status = 'scheduled';
+    updateData.scheduledAt = scheduledAt;
+  }
+  if (scheduledUnpublishAt) {
+    updateData.scheduledUnpublishAt = scheduledUnpublishAt;
   }
 
   await prisma.entryState.upsert({
     where: { entryId: entry.id },
-    update: { status: 'scheduled', scheduledAt },
+    update: updateData,
     create: {
       entryId: entry.id,
-      status: 'scheduled',
+      status: scheduledAt ? 'scheduled' : entry.state?.status ?? 'draft',
       draftVersionId: entry.state!.draftVersionId,
       scheduledAt,
+      scheduledUnpublishAt,
     },
   });
 
   res.json({
     id: entry.id,
-    status: 'scheduled',
-    scheduledAt: scheduledAt.toISOString(),
+    status: scheduledAt ? 'scheduled' : entry.state?.status ?? 'draft',
+    ...(scheduledAt && { scheduledAt: scheduledAt.toISOString() }),
+    ...(scheduledUnpublishAt && { scheduledUnpublishAt: scheduledUnpublishAt.toISOString() }),
   });
 });
 
@@ -652,6 +682,92 @@ router.post('/:id/revert', requireScope('cma:write'), async (req, res) => {
     etag: newVersion.etag,
     revertedFrom: versionId,
     createdAt: newVersion.createdAt,
+  });
+});
+
+// ─── POST /entries/:id/duplicate ───
+router.post('/:id/duplicate', requireScope('cma:write'), async (req, res) => {
+  const spaceId = getSpaceId(req);
+  if (!spaceId) {
+    res.status(400).json({ error: 'validation_error', message: 'spaceId is required' });
+    return;
+  }
+
+  const entry = await prisma.entry.findFirst({
+    where: { id: req.params.id as string, spaceId },
+    include: {
+      contentType: { select: { key: true, name: true } },
+      versions: { orderBy: { createdAt: 'desc' }, take: 1 },
+    },
+  });
+  if (!entry) {
+    res.status(404).json({ error: 'not_found', message: 'Entry not found' });
+    return;
+  }
+
+  const latestVersion = entry.versions[0];
+  if (!latestVersion) {
+    res.status(400).json({ error: 'invalid_state', message: 'Entry has no versions to duplicate' });
+    return;
+  }
+
+  const copySlug = `${entry.slug}-copy-${Date.now()}`;
+  const etag = generateEtag();
+
+  const duplicated = await prisma.$transaction(async (tx) => {
+    const newEntry = await tx.entry.create({
+      data: {
+        spaceId,
+        contentTypeId: entry.contentTypeId,
+        slug: copySlug,
+      },
+    });
+
+    const version = await tx.entryVersion.create({
+      data: {
+        entryId: newEntry.id,
+        kind: 'draft',
+        data: latestVersion.data as object,
+        etag,
+        createdById: req.auth!.userId,
+      },
+    });
+
+    await tx.entryState.create({
+      data: {
+        entryId: newEntry.id,
+        status: 'draft',
+        draftVersionId: version.id,
+      },
+    });
+
+    return tx.entry.findUniqueOrThrow({
+      where: { id: newEntry.id },
+      include: {
+        contentType: { select: { key: true, name: true } },
+        state: true,
+        versions: { orderBy: { createdAt: 'desc' }, take: 1 },
+      },
+    });
+  });
+
+  res.status(201).json({
+    id: duplicated.id,
+    slug: duplicated.slug,
+    contentType: duplicated.contentType,
+    status: duplicated.state?.status ?? 'draft',
+    latestVersion: duplicated.versions[0]
+      ? {
+          id: duplicated.versions[0].id,
+          kind: duplicated.versions[0].kind,
+          data: duplicated.versions[0].data,
+          etag: duplicated.versions[0].etag,
+          createdAt: duplicated.versions[0].createdAt,
+        }
+      : null,
+    duplicatedFrom: entry.id,
+    createdAt: duplicated.createdAt,
+    updatedAt: duplicated.updatedAt,
   });
 });
 
