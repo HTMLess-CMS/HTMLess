@@ -14,6 +14,8 @@ import {
   applyFilters,
   applySorting,
 } from '../../content/advanced-query.js';
+import { trackCacheHit, trackCacheMiss } from '../../cache/observability.js';
+import { addCacheTag, buildSurrogateKeyTags } from '../../cache/tags.js';
 
 import type { Request, Response } from 'express';
 
@@ -58,6 +60,7 @@ router.get('/:typeKey', async (req: Request, res: Response): Promise<void> => {
 
   const cached = await getCachedResponse(cacheKey);
   if (cached) {
+    trackCacheHit().catch(() => {});
     const parsed = JSON.parse(cached) as { etag: string; body: unknown };
     const etag = parsed.etag;
 
@@ -74,6 +77,8 @@ router.get('/:typeKey', async (req: Request, res: Response): Promise<void> => {
       .send(JSON.stringify(parsed.body));
     return;
   }
+
+  trackCacheMiss().catch(() => {});
 
   // ── Parse advanced filters & sort ──
   const filterConditions = parseFilters(req.query as Record<string, string>);
@@ -139,13 +144,15 @@ router.get('/:typeKey', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  // ── Cache the response ──
+  // ── Cache the response + register Surrogate-Key tags ──
   setCachedResponse(cacheKey, JSON.stringify({ etag, body }), CACHE_TTL).catch(() => {});
+  const surrogateKeys = buildSurrogateKeyTags(spaceId, typeKey);
+  addCacheTag(cacheKey, surrogateKeys).catch(() => {});
 
   res
     .set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
     .set('ETag', etag)
-    .set('Surrogate-Key', `space:${spaceId} type:${typeKey}`)
+    .set('Surrogate-Key', surrogateKeys.join(' '))
     .json(body);
 });
 
@@ -167,6 +174,7 @@ router.get('/:typeKey/:id', async (req: Request, res: Response): Promise<void> =
 
   const cached = await getCachedResponse(cacheKey);
   if (cached) {
+    trackCacheHit().catch(() => {});
     const parsed = JSON.parse(cached) as { etag: string; body: unknown };
     const etag = parsed.etag;
 
@@ -183,6 +191,8 @@ router.get('/:typeKey/:id', async (req: Request, res: Response): Promise<void> =
       .send(JSON.stringify(parsed.body));
     return;
   }
+
+  trackCacheMiss().catch(() => {});
 
   // ── Single-row lookup from published_documents ──
   const doc = await prisma.publishedDocument.findFirst({
@@ -218,13 +228,15 @@ router.get('/:typeKey/:id', async (req: Request, res: Response): Promise<void> =
     return;
   }
 
-  // ── Cache the response ──
+  // ── Cache the response + register Surrogate-Key tags ──
   setCachedResponse(cacheKey, JSON.stringify({ etag, body }), CACHE_TTL).catch(() => {});
+  const surrogateKeys = buildSurrogateKeyTags(spaceId, typeKey, id);
+  addCacheTag(cacheKey, surrogateKeys).catch(() => {});
 
   res
     .set('Cache-Control', 'public, max-age=60, stale-while-revalidate=300')
     .set('ETag', etag)
-    .set('Surrogate-Key', `space:${spaceId} type:${typeKey} entry:${id}`)
+    .set('Surrogate-Key', surrogateKeys.join(' '))
     .json(body);
 });
 

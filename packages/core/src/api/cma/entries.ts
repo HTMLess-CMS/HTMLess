@@ -6,6 +6,7 @@ import { requireScope } from '../../auth/middleware.js';
 import { validateEntryData, validateForPublish } from '../../schema/validator.js';
 import { materializeEntry, dematerializeEntry } from '../../content/materializer.js';
 import { invalidateByType } from '../../content/cache.js';
+import { getCDNProvider } from '../../cache/cdn-purge.js';
 
 const router: IRouter = Router();
 
@@ -493,6 +494,10 @@ router.post('/:id/publish', requireScope('cma:write'), async (req, res) => {
   materializeEntry(entry.id).catch(() => {});
   if (contentTypeKey) {
     invalidateByType(spaceId!, contentTypeKey).catch(() => {});
+    // Purge CDN edge caches by Surrogate-Key tags
+    getCDNProvider()
+      .purgeByTags([`space:${spaceId}`, `type:${contentTypeKey}`, `entry:${entry.id}`])
+      .catch(() => {});
   }
 
   res.set('ETag', `"${publishedVersion.etag}"`);
@@ -554,6 +559,10 @@ router.post('/:id/unpublish', requireScope('cma:write'), async (req, res) => {
   dematerializeEntry(entry.id).catch(() => {});
   if (contentTypeKey) {
     invalidateByType(spaceId!, contentTypeKey).catch(() => {});
+    // Purge CDN edge caches by Surrogate-Key tags
+    getCDNProvider()
+      .purgeByTags([`space:${spaceId}`, `type:${contentTypeKey}`, `entry:${entry.id}`])
+      .catch(() => {});
   }
 
   res.json({

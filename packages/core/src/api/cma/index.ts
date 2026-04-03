@@ -27,6 +27,8 @@ import commentsRouter from './comments.js';
 import spacesRouter from './spaces.js';
 import environmentsRouter from './environments.js';
 import whiteLabelRouter from './white-label.js';
+import cacheRouter from './cache.js';
+import marketplaceRouter from './marketplace.js';
 
 const router: IRouter = Router();
 
@@ -66,6 +68,8 @@ router.use('/ai', requirePermission('entry.read'), aiRouter);
 router.use('/', requirePermission('entry.read', 'entry.create'), commentsRouter);
 router.use('/search', requirePermission('entry.read'), searchRouter);
 router.use('/bulk', requirePermission('entry.create', 'entry.read'), bulkRouter);
+router.use('/cache', requirePermission('schema.admin'), cacheRouter);
+router.use('/marketplace', requirePermission('entry.read'), marketplaceRouter);
 router.use('/', requirePermission('entry.read', 'entry.create'), importExportRouter);
 
 export default router;

@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTMLess Pricing - Self-Hosted Free, Hosted Plans on the Roadmap</title>
+    <meta name="description" content="See HTMLess pricing with the free self-hosted open source core, planned hosted tiers, and which plan direction fits teams, agencies, and products.">
+    <meta name="keywords" content="HTMLess pricing, headless CMS pricing, open source CMS pricing, self-hosted CMS, hosted CMS roadmap">
+    <meta name="author" content="HTMLess">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#09090b">
+    <link rel="canonical" href="https://htmless.com/pricing/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="HTMLess Pricing">
+    <meta property="og:description" content="Free self-hosted core today, with hosted plan direction for teams that want HTMLess without running the infrastructure themselves.">
+    <meta property="og:url" content="https://htmless.com/pricing/">
+    <meta property="og:site_name" content="HTMLess">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HTMLess Pricing">
+    <meta name="twitter:description" content="Explore the free self-hosted HTMLess core and the hosted tiers planned for teams, products, and agencies.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #09090b;
+            --bg-surface: #17171c;
+            --bg-elevated: #1e1f25;
+            --border: #27272a;
+            --border-subtle: #1d1e23;
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dim: #71717a;
+            --accent: #6366f1;
+            --accent-light: #8b93ff;
+            --accent-glow: rgba(99, 102, 241, 0.15);
+            --green: #22c55e;
+            --amber: #f59e0b;
+        }
+        html {
+            scroll-behavior: smooth;
+            overflow-x: clip;
+            background: var(--bg);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--text);
+            background:
+                radial-gradient(circle at top center, rgba(99, 102, 241, 0.14), transparent 34%),
+                linear-gradient(180deg, #09090b 0%, #0d0d12 100%);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: clip;
+            max-width: 100%;
+        }
+        @supports not (overflow: clip) {
+            html, body { overflow-x: hidden; }
+        }
+        code, .mono { font-family: 'JetBrains Mono', monospace; }
+        a { color: inherit; }
+
+        nav {
+            position: fixed;
+            inset: 0 0 auto 0;
+            z-index: 100;
+            height: 64px;
+            background: rgba(9, 9, 11, 0.82);
+            backdrop-filter: blur(16px) saturate(180%);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .nav-inner,
+        .container,
+        .footer-inner,
+        .footer-bottom {
+            width: min(1120px, calc(100% - 2rem));
+            margin: 0 auto;
+        }
+        .nav-inner {
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .nav-logo {
+            text-decoration: none;
+            font-size: 1.3rem;
+            font-weight: 800;
+            letter-spacing: -0.03em;
+        }
+        .nav-logo span { color: var(--accent-light); }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+            list-style: none;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+        .nav-links a:hover,
+        .nav-links a.active { color: var(--text); }
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .nav-github,
+        .nav-cta,
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            text-decoration: none;
+            font-weight: 700;
+            border-radius: 10px;
+            transition: 0.2s;
+        }
+        .nav-github {
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            padding: 0.55rem 0.95rem;
+            font-size: 0.84rem;
+        }
+        .nav-github:hover {
+            color: var(--text);
+            border-color: var(--text-muted);
+        }
+        .nav-cta,
+        .btn-primary {
+            background: var(--accent);
+            color: var(--text);
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+        .nav-cta:hover,
+        .btn-primary:hover { background: var(--accent-light); }
+        .btn,
+        .btn-ghost {
+            padding: 0.9rem 1.35rem;
+            font-size: 0.92rem;
+        }
+        .btn-ghost {
+            color: var(--text);
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .btn-ghost:hover { border-color: var(--text-muted); }
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+        }
+        .hamburger span {
+            width: 22px;
+            height: 2px;
+            display: block;
+            background: var(--text);
+        }
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            inset: 64px 0 auto 0;
+            z-index: 99;
+            background: rgba(9, 9, 11, 0.98);
+            border-bottom: 1px solid var(--border);
+            padding: 0.5rem 0 1rem;
+        }
+        .mobile-menu.open { display: block; }
+        .mobile-menu a {
+            display: block;
+            padding: 0.95rem 1.25rem;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .mobile-menu a:hover {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        main { padding-top: 64px; }
+        section { padding: 4.75rem 0; }
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .section-label {
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--accent-light);
+            margin-bottom: 0.65rem;
+        }
+        .section-title {
+            font-size: clamp(2rem, 4.6vw, 3.5rem);
+            line-height: 1.08;
+            letter-spacing: -0.04em;
+        }
+        .section-desc {
+            color: var(--text-muted);
+            max-width: 640px;
+            font-size: 1rem;
+        }
+
+        .hero {
+            padding: 5rem 0 3.4rem;
+        }
+        .hero-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 1.5rem;
+            align-items: center;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            border: 1px solid var(--border);
+            background: rgba(23, 23, 28, 0.8);
+            border-radius: 999px;
+            padding: 0.45rem 0.95rem;
+            margin-bottom: 1.35rem;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+        .hero-badge .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+        }
+        .hero-copy h1 {
+            font-size: clamp(2.5rem, 6.6vw, 4.6rem);
+            line-height: 1.04;
+            letter-spacing: -0.05em;
+            margin-bottom: 1rem;
+        }
+        .hero-copy p {
+            color: var(--text-muted);
+            font-size: 1.03rem;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+            margin-top: 1.6rem;
+        }
+        .hero-note {
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 1.25rem;
+            background: rgba(23, 23, 28, 0.84);
+        }
+        .hero-note h2 {
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-dim);
+            margin-bottom: 0.85rem;
+        }
+        .hero-note p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+        .hero-note strong {
+            color: var(--text);
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        .price-card {
+            border: 1px solid var(--border);
+            border-radius: 22px;
+            padding: 1.35rem;
+            background: rgba(23, 23, 28, 0.82);
+            position: relative;
+        }
+        .price-card.featured {
+            border-color: rgba(99, 102, 241, 0.35);
+            box-shadow: 0 0 28px rgba(99, 102, 241, 0.08);
+        }
+        .price-card.featured::before {
+            content: "Recommended";
+            position: absolute;
+            top: -11px;
+            left: 1.2rem;
+            border-radius: 999px;
+            padding: 0.28rem 0.65rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            background: var(--accent);
+            color: var(--text);
+        }
+        .plan-label {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            margin-bottom: 0.45rem;
+        }
+        .price-card h3 {
+            font-size: 1.18rem;
+            margin-bottom: 0.35rem;
+        }
+        .price-line {
+            font-size: 2.45rem;
+            font-weight: 900;
+            letter-spacing: -0.05em;
+            line-height: 1;
+            margin-bottom: 0.3rem;
+        }
+        .price-line span {
+            font-size: 0.92rem;
+            font-weight: 500;
+            letter-spacing: 0;
+            color: var(--text-dim);
+        }
+        .price-desc {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .price-list {
+            list-style: none;
+            display: grid;
+            gap: 0.55rem;
+            margin-bottom: 1.15rem;
+        }
+        .price-list li {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            position: relative;
+            padding-left: 1rem;
+        }
+        .price-list li::before {
+            content: "";
+            position: absolute;
+            top: 0.62rem;
+            left: 0;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-light);
+        }
+
+        .notice,
+        .faq-card,
+        .pill-card {
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: rgba(23, 23, 28, 0.78);
+        }
+        .notice {
+            padding: 1.15rem 1.2rem;
+            margin-bottom: 1.5rem;
+        }
+        .notice strong { color: var(--text); }
+        .notice p { color: var(--text-muted); }
+
+        .pill-grid,
+        .faq-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        .pill-card,
+        .faq-card {
+            padding: 1.2rem;
+        }
+        .pill-card h3,
+        .faq-card h3 {
+            font-size: 1.05rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.45rem;
+        }
+        .pill-card p,
+        .faq-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .cta-panel {
+            text-align: center;
+            padding: 5rem 0 4.5rem;
+        }
+        .cta-panel h2 {
+            font-size: clamp(2rem, 4.8vw, 3.2rem);
+            line-height: 1.08;
+            letter-spacing: -0.05em;
+            margin-bottom: 0.85rem;
+        }
+        .cta-panel p {
+            color: var(--text-muted);
+            max-width: 620px;
+            margin: 0 auto;
+        }
+        .cta-actions {
+            display: flex;
+            justify-content: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+            margin-top: 1.6rem;
+        }
+
+        footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 2rem 0 3rem;
+        }
+        .footer-inner {
+            display: grid;
+            grid-template-columns: 1.3fr 0.85fr 0.85fr;
+            gap: 1.5rem;
+            align-items: start;
+        }
+        .footer-brand p {
+            color: var(--text-dim);
+            font-size: 0.86rem;
+            margin-top: 0.75rem;
+            max-width: 420px;
+        }
+        .footer-col h4 {
+            color: var(--text-dim);
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.85rem;
+        }
+        .footer-col a {
+            display: block;
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.86rem;
+            padding: 0.28rem 0;
+        }
+        .footer-col a:hover { color: var(--text); }
+        .footer-bottom {
+            margin-top: 2rem;
+            padding-top: 1.25rem;
+            border-top: 1px solid var(--border-subtle);
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            color: var(--text-dim);
+            font-size: 0.78rem;
+        }
+        .footer-bottom a {
+            color: var(--text-dim);
+            text-decoration: none;
+        }
+        .footer-bottom a:hover { color: var(--text-muted); }
+
+        @media (max-width: 1080px) {
+            .hero-grid,
+            .pricing-grid,
+            .pill-grid,
+            .faq-grid,
+            .footer-inner {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        @media (max-width: 768px) {
+            nav { height: 60px; }
+            .nav-inner,
+            .container,
+            .footer-inner,
+            .footer-bottom {
+                width: min(1120px, calc(100% - 1.25rem));
+            }
+            .nav-links,
+            .nav-actions {
+                display: none;
+            }
+            .hamburger { display: flex; }
+            .mobile-menu { inset: 60px 0 auto 0; }
+            main { padding-top: 60px; }
+            section { padding: 4rem 0; }
+            .hero-grid,
+            .pricing-grid,
+            .pill-grid,
+            .faq-grid,
+            .footer-inner,
+            .footer-bottom {
+                grid-template-columns: 1fr;
+            }
+            .hero-actions,
+            .cta-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .hero-actions .btn,
+            .cta-actions .btn {
+                width: 100%;
+            }
+        }
+        @media (max-width: 480px) {
+            .hero-badge { width: 100%; justify-content: center; }
+            .hero-copy h1 { font-size: 2.35rem; }
+            .section-title { font-size: 1.85rem; }
+            .price-line { font-size: 2.2rem; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "HTMLess",
+        "applicationCategory": "DeveloperApplication",
+        "url": "https://htmless.com/pricing/",
+        "offers": [
+            {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "USD",
+                "description": "Free self-hosted open source core"
+            },
+            {
+                "@type": "Offer",
+                "price": "29",
+                "priceCurrency": "USD",
+                "description": "Starter hosted plan direction"
+            },
+            {
+                "@type": "Offer",
+                "price": "99",
+                "priceCurrency": "USD",
+                "description": "Growth hosted plan direction"
+            },
+            {
+                "@type": "Offer",
+                "price": "299",
+                "priceCurrency": "USD",
+                "description": "Scale hosted plan direction"
+            }
+        ]
+    }
+    </script>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-logo">HTML<span>ess</span></a>
+            <ul class="nav-links">
+                <li><a href="/">Home</a></li>
+                <li><a href="/roadmap/">Roadmap</a></li>
+                <li><a href="/pricing/" class="active">Pricing</a></li>
+            </ul>
+            <div class="nav-actions">
+                <a href="https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener" class="nav-github">GitHub</a>
+                <a href="https://github.com/HTMLess-CMS/HTMLess#quick-start-with-docker" target="_blank" rel="noopener" class="nav-cta">Start with Docker</a>
+            </div>
+            <button class="hamburger" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="mobile-menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </nav>
+
+    <div class="mobile-menu" id="mobile-menu">
+        <a href="/">Home</a>
+        <a href="/roadmap/">Roadmap</a>
+        <a href="/pricing/">Pricing</a>
+        <a href="https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener">GitHub</a>
+    </div>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-grid">
+                <div class="hero-copy">
+                    <div class="hero-badge">
+                        <span class="dot"></span>
+                        Free self-hosted core today
+                    </div>
+                    <h1>Pricing that starts with open source ownership</h1>
+                    <p>HTMLess is free to self-host today. Hosted plans are shown here as product direction for teams that want the same CMS foundation without operating the infrastructure themselves.</p>
+                    <div class="hero-actions">
+                        <a href="https://github.com/HTMLess-CMS/HTMLess#quick-start-with-docker" target="_blank" rel="noopener" class="btn btn-primary">Start self-hosting</a>
+                        <a href="/roadmap/" class="btn btn-ghost">See the roadmap</a>
+                    </div>
+                </div>
+                <aside class="hero-note">
+                    <h2>Transparency</h2>
+                    <p><strong>The free tier is real today.</strong> The hosted Starter, Growth, and Scale plans are roadmap direction and early-access positioning, not a live checkout flow yet.</p>
+                </aside>
+            </div>
+        </section>
+
+        <section>
+            <div class="container">
+                <div class="section-head">
+                    <div>
+                        <p class="section-label">Pricing</p>
+                        <h2 class="section-title">Choose the way your team wants to run HTMLess</h2>
+                        <p class="section-desc">Keep full control with the free self-hosted core, or use the hosted direction as a guide for where managed HTMLess is heading next.</p>
+                    </div>
+                </div>
+
+                <div class="notice">
+                    <p><strong>Important:</strong> hosted pricing is intentionally shown as roadmap direction so teams can understand the product shape early. The GitHub repo and Docker setup are the real way to start today.</p>
+                </div>
+
+                <div class="pricing-grid">
+                    <article class="price-card">
+                        <p class="plan-label">Available now</p>
+                        <h3>Free</h3>
+                        <div class="price-line">$0</div>
+                        <p class="price-desc">Self-hosted open source core</p>
+                        <ul class="price-list">
+                            <li>Structured content, preview, uploads, and webhooks</li>
+                            <li>Docker-based local and self-hosted setup</li>
+                            <li>Unlimited ownership of your stack and data</li>
+                            <li>Community-driven open source workflow</li>
+                        </ul>
+                        <a href="https://github.com/HTMLess-CMS/HTMLess#quick-start-with-docker" target="_blank" rel="noopener" class="btn btn-ghost">Self-host guide</a>
+                    </article>
+
+                    <article class="price-card">
+                        <p class="plan-label">Hosted direction</p>
+                        <h3>Starter</h3>
+                        <div class="price-line">$29 <span>/ month</span></div>
+                        <p class="price-desc">For small sites and lightweight products</p>
+                        <ul class="price-list">
+                            <li>Managed HTMLess for a single team or space</li>
+                            <li>Simpler onboarding for non-technical teams</li>
+                            <li>Good fit for blogs, microsites, and small products</li>
+                            <li>Roadmap-aligned early access positioning</li>
+                        </ul>
+                        <a href="/roadmap/" class="btn btn-ghost">View roadmap</a>
+                    </article>
+
+                    <article class="price-card featured">
+                        <p class="plan-label">Hosted direction</p>
+                        <h3>Growth</h3>
+                        <div class="price-line">$99 <span>/ month</span></div>
+                        <p class="price-desc">For product teams and growing content operations</p>
+                        <ul class="price-list">
+                            <li>More spaces, more workflows, and faster support</li>
+                            <li>Best fit for SaaS teams shipping structured content</li>
+                            <li>Natural upgrade path once hosted HTMLess launches</li>
+                            <li>Aligned with the current product direction</li>
+                        </ul>
+                        <a href="https://github.com/HTMLess-CMS/HTMLess/issues" target="_blank" rel="noopener" class="btn btn-primary">Join early access</a>
+                    </article>
+
+                    <article class="price-card">
+                        <p class="plan-label">Hosted direction</p>
+                        <h3>Scale</h3>
+                        <div class="price-line">$299 <span>/ month</span></div>
+                        <p class="price-desc">For agencies, multi-brand teams, and bigger rollouts</p>
+                        <ul class="price-list">
+                            <li>Designed for multi-site and agency-friendly workflows</li>
+                            <li>Stronger support expectations and managed operations</li>
+                            <li>Best fit for teams standardizing across many properties</li>
+                            <li>Useful today as a planning benchmark for larger buyers</li>
+                        </ul>
+                        <a href="https://github.com/HTMLess-CMS/HTMLess/issues" target="_blank" rel="noopener" class="btn btn-ghost">Talk to us</a>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="container">
+                <div class="section-head">
+                    <div>
+                        <p class="section-label">What Every Plan Direction Assumes</p>
+                        <h2 class="section-title">The product story stays the same</h2>
+                        <p class="section-desc">Whether teams self-host or later choose managed HTMLess, the point is the same: structured content, cleaner delivery, and less lock-in.</p>
+                    </div>
+                </div>
+                <div class="pill-grid">
+                    <article class="pill-card">
+                        <h3>Open source core</h3>
+                        <p>HTMLess stays grounded in a MIT-licensed core that teams can inspect, fork, and self-host.</p>
+                    </article>
+                    <article class="pill-card">
+                        <h3>Structured workflows</h3>
+                        <p>Developers, designers, and editors work from cleaner content models instead of ad-hoc fields and page-level chaos.</p>
+                    </article>
+                    <article class="pill-card">
+                        <h3>Performance roadmap</h3>
+                        <p>Phase 9 is about denormalized delivery, better caching, and realtime workflows that lift every deployment model.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <div class="container">
+                <div class="section-head">
+                    <div>
+                        <p class="section-label">Questions</p>
+                        <h2 class="section-title">Quick answers for teams evaluating HTMLess</h2>
+                    </div>
+                </div>
+                <div class="faq-grid">
+                    <article class="faq-card">
+                        <h3>Can I use HTMLess for free right now?</h3>
+                        <p>Yes. The free self-hosted core is the real starting point today, and the GitHub repo plus Docker setup are the canonical way to get running.</p>
+                    </article>
+                    <article class="faq-card">
+                        <h3>Are the hosted prices live?</h3>
+                        <p>Not yet. They are intentionally shown as roadmap direction and early-access positioning so the market story is clear before hosted HTMLess formally launches.</p>
+                    </article>
+                    <article class="faq-card">
+                        <h3>Why show pricing before hosted launch?</h3>
+                        <p>Because agencies, product teams, and non-technical buyers often want to understand where the product is going even if they start with self-hosting first.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta-panel">
+            <div class="container">
+                <h2>Start free now, then follow the roadmap as HTMLess grows up.</h2>
+                <p>Pricing is now on its own page so the homepage stays short on mobile, while teams still have a clear place to evaluate self-hosting and hosted direction.</p>
+                <div class="cta-actions">
+                    <a href="https://github.com/HTMLess-CMS/HTMLess#quick-start-with-docker" target="_blank" rel="noopener" class="btn btn-primary">Start with Docker</a>
+                    <a href="/roadmap/" class="btn btn-ghost">Open roadmap</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <div class="footer-brand">
+                <a href="/" class="nav-logo">HTML<span>ess</span></a>
+                <p>Open source headless CMS for teams that want structure, self-hosting, and a credible path to faster delivery and better collaboration.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Product</h4>
+                <a href="/">Homepage</a>
+                <a href="/pricing/">Pricing</a>
+                <a href="/roadmap/">Roadmap</a>
+            </div>
+            <div class="footer-col">
+                <h4>Developers</h4>
+                <a href="https://github.com/HTMLess-CMS/HTMLess#quick-start-with-docker" target="_blank" rel="noopener">Self-Host Guide</a>
+                <a href="https://github.com/HTMLess-CMS/HTMLess#readme" target="_blank" rel="noopener">Documentation</a>
+                <a href="https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 HTMLess. MIT Licensed.</p>
+            <p>Crafted by <a href="https://webdesignerchicago.com" target="_blank" rel="noopener">Web Designer Chicago</a></p>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            var menuButton = document.querySelector('.hamburger');
+            var mobileMenu = document.querySelector('.mobile-menu');
+
+            if (!menuButton || !mobileMenu) return;
+
+            menuButton.addEventListener('click', function () {
+                var isOpen = mobileMenu.classList.toggle('open');
+                menuButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            });
+
+            mobileMenu.querySelectorAll('a').forEach(function (link) {
+                link.addEventListener('click', function () {
+                    mobileMenu.classList.remove('open');
+                    menuButton.setAttribute('aria-expanded', 'false');
+                });
+            });
+        }());
+    </script>
+</body>
+</html>
