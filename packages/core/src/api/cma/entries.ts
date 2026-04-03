@@ -180,6 +180,7 @@ router.post('/', requireScope('cma:write'), async (req, res) => {
     });
   });
 
+  eventBus.emit('entry.created', { spaceId, userId: req.auth!.userId, data: { entryId: entry.id, typeKey: contentTypeKey, slug } });
   res.status(201).json({
     id: entry.id,
     slug: entry.slug,
@@ -507,6 +508,9 @@ router.post('/:id/publish', requireScope('cma:write'), async (req, res) => {
       .catch(() => {});
   }
 
+  // Emit before response to ensure event fires
+  eventBus.emit('entry.published', { spaceId, userId: req.auth!.userId, data: { entryId: entry.id, publishedVersionId: publishedVersion.id, slug: entry.slug } });
+
   res.set('ETag', `"${publishedVersion.etag}"`);
 
   res.json({
@@ -518,8 +522,6 @@ router.post('/:id/publish', requireScope('cma:write'), async (req, res) => {
     status: 'published',
     createdAt: publishedVersion.createdAt,
   });
-
-  eventBus.emit('entry.published', { spaceId, userId: req.auth!.userId, data: { entryId: entry.id, publishedVersionId: publishedVersion.id, slug: entry.slug } });
 });
 
 // ─── POST /entries/:id/unpublish ───
@@ -791,6 +793,7 @@ router.post('/:id/duplicate', requireScope('cma:write'), async (req, res) => {
     });
   });
 
+  eventBus.emit('entry.created', { spaceId, userId: req.auth!.userId, data: { entryId: duplicated.id, typeKey: duplicated.contentType.key, slug: duplicated.slug } });
   res.status(201).json({
     id: duplicated.id,
     slug: duplicated.slug,
