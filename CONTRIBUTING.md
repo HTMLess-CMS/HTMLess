@@ -12,7 +12,7 @@ Thanks for your interest in contributing to HTMLess. This guide covers everythin
 
 ```bash
 # Clone the repo
-git clone https://github.com/pbieda/htmless.git
+git clone https://github.com/HTMLess-CMS/HTMLess.git htmless
 cd htmless
 
 # Install dependencies

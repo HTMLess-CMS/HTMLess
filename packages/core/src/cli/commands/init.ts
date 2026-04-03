@@ -55,7 +55,7 @@ datasource db {
 }
 
 // Copy the full HTMLess schema from the official repo:
-// https://github.com/htmless/htmless/blob/main/packages/core/prisma/schema.prisma
+// https://github.com/HTMLess-CMS/HTMLess/blob/main/packages/core/prisma/schema.prisma
 //
 // Or run: npx prisma db pull  (if you already have a running instance)
 `;

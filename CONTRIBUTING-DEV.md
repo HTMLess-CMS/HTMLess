@@ -1,6 +1,6 @@
 # HTMLess Developer Workflow
 
-Detailed development guide for contributors. For the quick-start version, see [CONTRIBUTING.md](../CONTRIBUTING.md).
+Detailed development guide for contributors. For the quick-start version, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Docker Dev Environment
 

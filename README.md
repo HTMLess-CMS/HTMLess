@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0-orange.svg)](package.json)
 
-[Website](https://htmless.com) · [Contributing](CONTRIBUTING.md) · [Developer Guide](CONTRIBUTING-DEV.md)
+[Website](https://htmless.com) · [Roadmap](docs/ROADMAP.md) · [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) · [Developer Guide](CONTRIBUTING-DEV.md)
 
 HTMLess is an open source headless CMS for developers, designers, editors, and agencies who want structured content, clean APIs, and Docker-first self-hosting without getting trapped in a bloated platform.
 
@@ -105,8 +105,12 @@ This separation keeps editorial operations safer while giving frontend teams a d
 
 ## Documentation
 
-- [CONTRIBUTING.md](CONTRIBUTING.md) — how to set up, code style, PR workflow
-- [CONTRIBUTING-DEV.md](CONTRIBUTING-DEV.md) — adding routes, migrations, Docker, troubleshooting
+- [docs/ROADMAP.md](docs/ROADMAP.md) for current product phases and missing capabilities
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the high-level system design
+- [docs/SPEC.md](docs/SPEC.md) for the API and behavior contract
+- [docs/SECURITY.md](docs/SECURITY.md) for security decisions and operational concerns
+- [CONTRIBUTING.md](CONTRIBUTING.md) for setup, code style, and pull request workflow
+- [CONTRIBUTING-DEV.md](CONTRIBUTING-DEV.md) for routes, migrations, Docker, testing, and troubleshooting
 
 ## Why Install It Now
 
