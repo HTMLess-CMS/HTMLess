@@ -33,6 +33,45 @@ import {
 let token: string;
 let spaceId: string;
 
+const ONE_BY_ONE_PNG = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO5W5mQAAAAASUVORK5CYII=',
+  'base64',
+);
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function articleBody(text: string): Array<Record<string, unknown>> {
+  return [
+    {
+      type: 'paragraph',
+      attrs: { text },
+    },
+  ];
+}
+
+async function waitFor<T>(
+  label: string,
+  fn: () => Promise<T>,
+  predicate: (value: T) => boolean,
+  timeoutMs = 3000,
+  intervalMs = 150,
+): Promise<T> {
+  const deadline = Date.now() + timeoutMs;
+  let lastValue: T | undefined;
+
+  while (Date.now() < deadline) {
+    lastValue = await fn();
+    if (predicate(lastValue)) {
+      return lastValue;
+    }
+    await sleep(intervalMs);
+  }
+
+  throw new Error(`Timed out waiting for ${label}`);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Auth
 // ═══════════════════════════════════════════════════════════════════════════
@@ -71,10 +110,79 @@ describe('Auth', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Spaces
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Spaces', () => {
+  before(async () => {
+    token = await getAdminToken();
+    spaceId = await getSpaceId();
+  });
+
+  let tempSpaceId: string | undefined;
+
+  after(async () => {
+    if (tempSpaceId) {
+      await api(`/cma/v1/spaces/${tempSpaceId}`, {
+        method: 'DELETE',
+        token,
+      }).catch(() => {});
+    }
+  });
+
+  it('List spaces includes the seeded default space', async () => {
+    const res = await api<{ items: Array<{ id: string; slug: string }>; total: number }>('/cma/v1/spaces', {
+      token,
+    });
+
+    assert.equal(res.status, 200);
+    assert.ok(res.body.total >= 1, 'should return at least one accessible space');
+    assert.ok(
+      res.body.items.some((space) => space.id === spaceId && space.slug === 'default'),
+      'default seeded space should be returned',
+    );
+  });
+
+  it('List templates returns starter space templates', async () => {
+    const res = await api<{ items: Array<{ key: string; name: string }>; total: number }>('/cma/v1/spaces/templates', {
+      token,
+    });
+
+    assert.equal(res.status, 200);
+    assert.ok(res.body.total >= 1, 'should expose at least one space template');
+    assert.ok(res.body.items.every((item) => item.key && item.name), 'templates should include key and name');
+  });
+
+  it('Create and delete a temporary space', async () => {
+    const slug = uniqueSlug('space');
+
+    const createRes = await api<{ id: string; slug: string; name: string }>('/cma/v1/spaces', {
+      method: 'POST',
+      token,
+      body: { name: 'Temporary Test Space', slug },
+    });
+
+    assert.equal(createRes.status, 201);
+    assert.ok(createRes.body.id, 'created space should include an id');
+    assert.equal(createRes.body.slug, slug);
+
+    tempSpaceId = createRes.body.id;
+
+    const deleteRes = await api(`/cma/v1/spaces/${tempSpaceId}`, {
+      method: 'DELETE',
+      token,
+    });
+
+    assert.equal(deleteRes.status, 204);
+    tempSpaceId = undefined;
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Schema
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('Schema', () => {
+describe('Schema', { concurrency: 1 }, () => {
   before(async () => {
     token = await getAdminToken();
     spaceId = await getSpaceId();
@@ -149,7 +257,7 @@ describe('Schema', () => {
 // Entries
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('Entries', () => {
+describe('Entries', { concurrency: 1 }, () => {
   before(async () => {
     token = await getAdminToken();
     spaceId = await getSpaceId();
@@ -179,7 +287,7 @@ describe('Entries', () => {
         title: 'Test Article',
         slug: slug1,
         excerpt: 'An excerpt',
-        body: '<p>Hello world</p>',
+        body: articleBody('Hello world'),
       },
     });
 
@@ -197,7 +305,7 @@ describe('Entries', () => {
     const res = await authPost('/cma/v1/entries', {
       contentTypeKey: 'article',
       slug: slug1,
-      data: { title: 'Duplicate', slug: slug1, body: '<p>dup</p>' },
+      data: { title: 'Duplicate', slug: slug1, body: articleBody('dup') },
     });
 
     assert.equal(res.status, 409);
@@ -225,7 +333,7 @@ describe('Entries', () => {
           title: 'Updated Title',
           slug: slug1,
           excerpt: 'Updated excerpt',
-          body: '<p>Updated body</p>',
+          body: articleBody('Updated body'),
         },
       },
       undefined,
@@ -245,7 +353,7 @@ describe('Entries', () => {
         data: {
           title: 'Should Fail',
           slug: slug1,
-          body: '<p>conflict</p>',
+          body: articleBody('conflict'),
         },
       },
       undefined,
@@ -322,10 +430,378 @@ describe('Entries', () => {
 });
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Media
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Media', { concurrency: 1 }, () => {
+  before(async () => {
+    token = await getAdminToken();
+    spaceId = await getSpaceId();
+  });
+
+  let assetId: string;
+  let storageKey: string;
+  let mediaUrl: string;
+
+  after(async () => {
+    if (assetId) {
+      await authDelete(`/cma/v1/assets/${assetId}`).catch(() => {});
+    }
+  });
+
+  it('Raw upload creates a stored asset with metadata and delivery URL', async () => {
+    const res = await fetch(`${API_URL}/cma/v1/uploads`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'X-Space-Id': spaceId,
+        'Content-Type': 'image/png',
+        'X-Filename': 'pixel.png',
+        'X-Alt': 'Single pixel',
+        'X-Caption': 'Upload test asset',
+      },
+      body: ONE_BY_ONE_PNG,
+    });
+
+    assert.equal(res.status, 201);
+
+    const body = await res.json() as {
+      id: string;
+      width: number | null;
+      height: number | null;
+      mimeType: string;
+      storageKey: string;
+      url: string;
+      alt: string | null;
+      caption: string | null;
+    };
+
+    assert.ok(body.id, 'upload should return asset id');
+    assert.equal(body.mimeType, 'image/png');
+    assert.equal(body.width, 1);
+    assert.equal(body.height, 1);
+    assert.equal(body.alt, 'Single pixel');
+    assert.equal(body.caption, 'Upload test asset');
+    assert.ok(body.storageKey.includes(spaceId), 'storage key should include the current space');
+    assert.ok(body.url.startsWith('/media/'), 'upload should return a delivery URL');
+
+    assetId = body.id;
+    storageKey = body.storageKey;
+    mediaUrl = body.url;
+  });
+
+  it('Uploaded asset is readable from CMA, CDA, and the media delivery endpoint', async () => {
+    const cmaAsset = await authGet<{
+      id: string;
+      storageKey: string;
+      width: number | null;
+      height: number | null;
+    }>(`/cma/v1/assets/${assetId}`);
+
+    assert.equal(cmaAsset.status, 200);
+    assert.equal(cmaAsset.body.id, assetId);
+    assert.equal(cmaAsset.body.storageKey, storageKey);
+    assert.equal(cmaAsset.body.width, 1);
+    assert.equal(cmaAsset.body.height, 1);
+
+    const cdaAsset = await api<{ id: string; storageKey: string; mimeType: string }>(`/cda/v1/assets/${assetId}`, {
+      spaceId,
+    });
+
+    assert.equal(cdaAsset.status, 200);
+    assert.equal(cdaAsset.body.id, assetId);
+    assert.equal(cdaAsset.body.storageKey, storageKey);
+    assert.equal(cdaAsset.body.mimeType, 'image/png');
+
+    const mediaRes = await fetch(`${API_URL}${mediaUrl}`);
+    const mediaBuffer = Buffer.from(await mediaRes.arrayBuffer());
+
+    assert.equal(mediaRes.status, 200);
+    assert.equal(mediaRes.headers.get('content-type'), 'image/png');
+    assert.ok(
+      mediaRes.headers.get('cache-control')?.includes('immutable'),
+      'delivery response should be cacheable',
+    );
+    assert.equal(mediaBuffer.length, ONE_BY_ONE_PNG.length);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Blocks
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Blocks', { concurrency: 1 }, () => {
+  before(async () => {
+    token = await getAdminToken();
+    spaceId = await getSpaceId();
+  });
+
+  const blockKey = uniqueSlug('block').replace(/-/g, '_');
+  let patternId: string | undefined;
+
+  after(async () => {
+    if (patternId) {
+      await authDelete(`/cma/v1/blocks/patterns/${patternId}`).catch(() => {});
+    }
+    await authDelete(`/cma/v1/blocks/definitions/${blockKey}`).catch(() => {});
+  });
+
+  it('Custom block definitions support create, versioned update, and latest read', async () => {
+    const createRes = await authPost<{
+      key: string;
+      version: string;
+      title: string;
+      attributesSchema: Record<string, unknown>;
+    }>('/cma/v1/blocks/definitions', {
+      key: blockKey,
+      title: 'Promo Card',
+      description: 'Test block definition',
+      attributesSchema: {
+        type: 'object',
+        properties: {
+          heading: { type: 'string' },
+        },
+      },
+    });
+
+    assert.equal(createRes.status, 201);
+    assert.equal(createRes.body.key, blockKey);
+    assert.equal(createRes.body.version, '1.0.0');
+
+    const patchRes = await authPatch<{
+      key: string;
+      version: string;
+      title: string;
+    }>(`/cma/v1/blocks/definitions/${blockKey}`, {
+      title: 'Promo Card v2',
+    });
+
+    assert.equal(patchRes.status, 200);
+    assert.equal(patchRes.body.key, blockKey);
+    assert.equal(patchRes.body.version, '1.1.0');
+    assert.equal(patchRes.body.title, 'Promo Card v2');
+
+    const getRes = await authGet<{ key: string; version: string; title: string }>(`/cma/v1/blocks/definitions/${blockKey}`);
+
+    assert.equal(getRes.status, 200);
+    assert.equal(getRes.body.key, blockKey);
+    assert.equal(getRes.body.version, '1.1.0');
+    assert.equal(getRes.body.title, 'Promo Card v2');
+  });
+
+  it('Patterns support create, list, and delete', async () => {
+    const createRes = await authPost<{
+      id: string;
+      title: string;
+      blockTree: Array<Record<string, unknown>>;
+    }>('/cma/v1/blocks/patterns', {
+      title: 'Hero Pattern',
+      description: 'Pattern for tests',
+      blockTree: [
+        {
+          type: blockKey,
+          attrs: {
+            heading: 'Hello from a pattern',
+          },
+        },
+      ],
+      typeKeys: ['article'],
+    });
+
+    assert.equal(createRes.status, 201);
+    assert.ok(createRes.body.id, 'pattern should return id');
+    assert.equal(createRes.body.title, 'Hero Pattern');
+    assert.equal(createRes.body.blockTree.length, 1);
+    patternId = createRes.body.id;
+
+    const listRes = await authGet<{ items: Array<{ id: string }>; total: number }>('/cma/v1/blocks/patterns');
+
+    assert.equal(listRes.status, 200);
+    assert.ok(listRes.body.items.some((pattern) => pattern.id === patternId), 'created pattern should appear in list');
+
+    const deleteRes = await authDelete(`/cma/v1/blocks/patterns/${patternId}`);
+    assert.equal(deleteRes.status, 204);
+    patternId = undefined;
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Extensions
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Extensions', () => {
+  before(async () => {
+    token = await getAdminToken();
+    spaceId = await getSpaceId();
+  });
+
+  const extensionKey = uniqueSlug('ext');
+
+  after(async () => {
+    await authDelete(`/cma/v1/extensions/${extensionKey}`).catch(() => {});
+  });
+
+  it('Extension manifests support create, list, fetch, and delete', async () => {
+    const createRes = await authPost<{
+      key: string;
+      version: string;
+      routes?: Array<{ method: string; path: string }>;
+    }>('/cma/v1/extensions', {
+      key: extensionKey,
+      name: 'Test Extension',
+      version: '1.0.0',
+      description: 'Extension used by integration tests',
+      routes: [{ method: 'GET', path: '/hello', handler: 'helloHandler' }],
+    });
+
+    assert.equal(createRes.status, 201);
+    assert.equal(createRes.body.key, extensionKey);
+    assert.equal(createRes.body.version, '1.0.0');
+    assert.equal(createRes.body.routes?.[0]?.path, '/hello');
+
+    const listRes = await authGet<{ items: Array<{ key: string }>; total: number }>('/cma/v1/extensions');
+
+    assert.equal(listRes.status, 200);
+    assert.ok(listRes.body.items.some((item) => item.key === extensionKey), 'created extension should appear in list');
+
+    const getRes = await authGet<{ key: string; name: string }>(`/cma/v1/extensions/${extensionKey}`);
+
+    assert.equal(getRes.status, 200);
+    assert.equal(getRes.body.key, extensionKey);
+    assert.equal(getRes.body.name, 'Test Extension');
+
+    const deleteRes = await authDelete(`/cma/v1/extensions/${extensionKey}`);
+    assert.equal(deleteRes.status, 204);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DX
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('DX', () => {
+  before(async () => {
+    token = await getAdminToken();
+    spaceId = await getSpaceId();
+  });
+
+  it('TypeScript codegen returns declarations for seeded content types', async () => {
+    const res = await authGet<string>('/cma/v1/codegen/typescript');
+
+    assert.equal(res.status, 200);
+    assert.ok(
+      res.headers.get('content-type')?.includes('text/plain'),
+      'codegen should return plain text declarations',
+    );
+    assert.match(res.body, /export interface ArticleFields/);
+    assert.match(res.body, /export interface HtmlessEntry/);
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Product APIs
+// ═══════════════════════════════════════════════════════════════════════════
+
+describe('Product APIs', { concurrency: 1 }, () => {
+  before(async () => {
+    token = await getAdminToken();
+    spaceId = await getSpaceId();
+  });
+
+  const localeCode = uniqueSlug('locale').slice(0, 16);
+  const redirectSourceSlug = uniqueSlug('redirect');
+  const redirectTargetSlug = `${redirectSourceSlug}-updated`;
+  let redirectEntryId: string | undefined;
+
+  after(async () => {
+    await authDelete(`/cma/v1/locales/${localeCode}`).catch(() => {});
+    if (redirectEntryId) {
+      await authDelete(`/cma/v1/entries/${redirectEntryId}`).catch(() => {});
+    }
+  });
+
+  it('Locales support create, list, patch, and delete', async () => {
+    const createRes = await authPost<{ code: string; name: string; isDefault: boolean }>('/cma/v1/locales', {
+      code: localeCode,
+      name: 'Test Locale',
+      isDefault: false,
+    });
+
+    assert.equal(createRes.status, 201);
+    assert.equal(createRes.body.code, localeCode);
+    assert.equal(createRes.body.name, 'Test Locale');
+
+    const listRes = await authGet<{ items: Array<{ code: string }>; total: number }>('/cma/v1/locales');
+
+    assert.equal(listRes.status, 200);
+    assert.ok(listRes.body.items.some((locale) => locale.code === localeCode), 'created locale should appear in list');
+
+    const patchRes = await authPatch<{ code: string; name: string }>(`/cma/v1/locales/${localeCode}`, {
+      name: 'Updated Test Locale',
+    });
+
+    assert.equal(patchRes.status, 200);
+    assert.equal(patchRes.body.name, 'Updated Test Locale');
+
+    const deleteRes = await authDelete(`/cma/v1/locales/${localeCode}`);
+    assert.equal(deleteRes.status, 204);
+  });
+
+  it('Changing an entry slug creates a CDA redirect and search can find the new slug', async () => {
+    const createRes = await authPost<{
+      id: string;
+      slug: string;
+      latestVersion: { etag: string };
+    }>('/cma/v1/entries', {
+      contentTypeKey: 'article',
+      slug: redirectSourceSlug,
+      data: {
+        title: 'Redirect Test Article',
+        slug: redirectSourceSlug,
+        body: articleBody('redirect body'),
+      },
+    });
+
+    assert.equal(createRes.status, 201);
+    redirectEntryId = createRes.body.id;
+
+    const patchRes = await authPatch<{ id: string; slug: string }>(`/cma/v1/entries/${redirectEntryId}`, {
+      slug: redirectTargetSlug,
+    });
+
+    assert.equal(patchRes.status, 200);
+    assert.equal(patchRes.body.slug, redirectTargetSlug);
+
+    const redirectRes = await api<{
+      fromSlug: string;
+      toSlug: string;
+      statusCode: number;
+    }>(`/cda/v1/redirects/${redirectSourceSlug}`, { spaceId });
+
+    assert.equal(redirectRes.status, 200);
+    assert.equal(redirectRes.body.fromSlug, redirectSourceSlug);
+    assert.equal(redirectRes.body.toSlug, redirectTargetSlug);
+    assert.equal(redirectRes.body.statusCode, 301);
+
+    const searchRes = await authGet<{
+      entries: Array<{ id: string; slug: string }>;
+      assets: unknown[];
+      schemas: unknown[];
+    }>(`/cma/v1/search?q=${encodeURIComponent(redirectTargetSlug)}`);
+
+    assert.equal(searchRes.status, 200);
+    assert.ok(
+      searchRes.body.entries.some((entry) => entry.id === redirectEntryId && entry.slug === redirectTargetSlug),
+      'search should find the updated entry slug',
+    );
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
 // CDA (Content Delivery API)
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('CDA', () => {
+describe('CDA', { concurrency: 1 }, () => {
   before(async () => {
     token = await getAdminToken();
     spaceId = await getSpaceId();
@@ -347,7 +823,7 @@ describe('CDA', () => {
       data: {
         title: 'CDA Test Article',
         slug: cdaSlug,
-        body: '<p>CDA body</p>',
+        body: articleBody('CDA body'),
       },
     });
     assert.equal(create.status, 201);
@@ -371,13 +847,18 @@ describe('CDA', () => {
   });
 
   it('Published entry appears in CDA', async () => {
-    const res = await api<{
-      items: Array<{ id: string; slug: string; data: Record<string, unknown> }>;
-      pagination: { total: number };
-    }>(`/cda/v1/content/article`, { spaceId });
+    const res = await waitFor(
+      'published entry in CDA',
+      async () =>
+        api<{
+          items: Array<{ id: string; slug: string; data: Record<string, unknown> }>;
+          pagination: { total: number };
+        }>(`/cda/v1/content/article?slug=${cdaSlug}`, { spaceId }),
+      (response) => response.status === 200 && response.body.items.some((entry) => entry.id === cdaEntryId),
+    );
 
     assert.equal(res.status, 200);
-    const found = res.body.items.find((e) => e.id === cdaEntryId);
+    const found = res.body.items.find((entry) => entry.id === cdaEntryId);
     assert.ok(found, 'published entry should appear in CDA listing');
     assert.equal(found!.slug, cdaSlug);
   });
@@ -405,6 +886,68 @@ describe('CDA', () => {
     assert.equal(res.body.items[0].slug, cdaSlug);
   });
 
+  it('CDA supports field projection on single-entry reads', async () => {
+    const res = await api<{
+      id: string;
+      slug: string;
+      data: Record<string, unknown>;
+    }>(`/cda/v1/content/article/${cdaEntryId}?fields=title,slug`, { spaceId });
+
+    assert.equal(res.status, 200);
+    assert.equal(res.body.id, cdaEntryId);
+    assert.deepEqual(Object.keys(res.body.data).sort(), ['slug', 'title']);
+    assert.equal(res.body.data.title, 'CDA Test Article');
+  });
+
+  it('CDA supports advanced filter params against published data', async () => {
+    const res = await api<{
+      items: Array<{ id: string; data: Record<string, unknown> }>;
+      pagination: { total: number };
+    }>(`/cda/v1/content/article?filter[title][$contains]=CDA%20Test`, { spaceId });
+
+    assert.equal(res.status, 200);
+    assert.ok(res.body.pagination.total >= 1, 'filter query should return at least one result');
+    assert.ok(
+      res.body.items.some((entry) => entry.id === cdaEntryId),
+      'filtered results should include the published CDA test entry',
+    );
+  });
+
+  it('CDA returns 304 when If-None-Match matches the cached ETag', async () => {
+    const first = await api(`/cda/v1/content/article?slug=${cdaSlug}`, { spaceId });
+    assert.equal(first.status, 200);
+
+    const etag = first.headers.get('etag');
+    assert.ok(etag, 'first request should return an ETag');
+
+    const second = await api(`/cda/v1/content/article?slug=${cdaSlug}`, {
+      spaceId,
+      headers: { 'If-None-Match': etag! },
+    });
+
+    assert.equal(second.status, 304);
+  });
+
+  it('CDA list requests register cache keys visible from the CMA cache observability endpoint', async () => {
+    const listRes = await api(`/cda/v1/content/article?slug=${cdaSlug}`, { spaceId });
+    assert.equal(listRes.status, 200);
+
+    const keysRes = await waitFor(
+      'CDA cache keys',
+      async () =>
+        authGet<{ keys: string[]; count: number }>(
+          `/cma/v1/cache/keys?pattern=${encodeURIComponent(`cda:${spaceId}:article:*`)}`,
+        ),
+      (res) => res.status === 200 && res.body.keys.length > 0,
+    );
+
+    assert.equal(keysRes.status, 200);
+    assert.ok(
+      keysRes.body.keys.some((key) => key.startsWith(`cda:${spaceId}:article:`)),
+      'cache observability should list the cached CDA key',
+    );
+  });
+
   it('Unpublished entry does not appear in CDA', async () => {
     // Unpublish
     const unpub = await authPost(`/cma/v1/entries/${cdaEntryId}/unpublish`, {});
@@ -422,7 +965,7 @@ describe('CDA', () => {
     // First save a fresh draft to get a valid etag
     const draftRes = await authPost<{ etag: string }>(
       `/cma/v1/entries/${cdaEntryId}/save-draft`,
-      { data: { title: 'CDA Test Article', slug: cdaSlug, body: '<p>CDA body</p>' } },
+      { data: { title: 'CDA Test Article', slug: cdaSlug, body: articleBody('CDA body') } },
     );
     assert.equal(draftRes.status, 200);
 
@@ -441,7 +984,7 @@ describe('CDA', () => {
 // Preview
 // ═══════════════════════════════════════════════════════════════════════════
 
-describe('Preview', () => {
+describe('Preview', { concurrency: 1 }, () => {
   before(async () => {
     token = await getAdminToken();
     spaceId = await getSpaceId();
@@ -459,7 +1002,7 @@ describe('Preview', () => {
     const e1 = await authPost<{ id: string; latestVersion: { etag: string } }>('/cma/v1/entries', {
       contentTypeKey: 'article',
       slug: previewSlug,
-      data: { title: 'Preview Draft', slug: previewSlug, body: '<p>draft content</p>' },
+      data: { title: 'Preview Draft', slug: previewSlug, body: articleBody('draft content') },
     });
     assert.equal(e1.status, 201);
     previewEntryId = e1.body.id;
@@ -467,7 +1010,7 @@ describe('Preview', () => {
     const e2 = await authPost<{ id: string; latestVersion: { etag: string } }>('/cma/v1/entries', {
       contentTypeKey: 'article',
       slug: previewSlug2,
-      data: { title: 'Preview Draft 2', slug: previewSlug2, body: '<p>draft content 2</p>' },
+      data: { title: 'Preview Draft 2', slug: previewSlug2, body: articleBody('draft content 2') },
     });
     assert.equal(e2.status, 201);
     previewEntry2Id = e2.body.id;

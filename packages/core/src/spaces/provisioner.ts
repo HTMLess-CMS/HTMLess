@@ -1,7 +1,8 @@
 import { prisma } from '../db.js';
-import { getTemplate } from './templates.js';
+import { getTemplate, isPremiumTemplate, getPremiumTemplate } from './template-registry.js';
 import { seedCoreBlocks } from '../blocks/seed-core-blocks.js';
 import type { Space } from '@prisma/client';
+import { createHash } from 'crypto';
 
 /**
  * Provisions a new space with an optional template.
@@ -104,6 +105,53 @@ export async function provisionSpace(
           hierarchical: tax.hierarchical ?? false,
         },
       });
+    }
+
+    // Seed sample entries for premium templates
+    if (templateKey && isPremiumTemplate(templateKey)) {
+      const premiumTpl = getPremiumTemplate(templateKey);
+      if (premiumTpl) {
+        // Build a map from content type key -> database id
+        const ctMap: Record<string, string> = {};
+        for (const ct of template.contentTypes) {
+          const row = await prisma.contentType.findUnique({
+            where: { spaceId_key: { spaceId: space.id, key: ct.key } },
+          });
+          if (row) ctMap[ct.key] = row.id;
+        }
+
+        for (const sample of premiumTpl.sampleEntries) {
+          const contentTypeId = ctMap[sample.contentTypeKey];
+          if (!contentTypeId) continue;
+
+          const entry = await prisma.entry.create({
+            data: { spaceId: space.id, contentTypeId, slug: sample.slug },
+          });
+
+          if (userId) {
+            const dataStr = JSON.stringify(sample.data);
+            const etag = createHash('md5').update(dataStr).digest('hex');
+
+            const version = await prisma.entryVersion.create({
+              data: {
+                entryId: entry.id,
+                kind: 'draft',
+                data: sample.data as object,
+                etag,
+                createdById: userId,
+              },
+            });
+
+            await prisma.entryState.create({
+              data: {
+                entryId: entry.id,
+                status: 'draft',
+                draftVersionId: version.id,
+              },
+            });
+          }
+        }
+      }
     }
   }
 

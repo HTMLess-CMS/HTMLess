@@ -1,22 +1,14 @@
 import { Router } from 'express';
 import type { Router as IRouter } from 'express';
 import { prisma } from '../../db.js';
-import { getTemplates, getTemplate } from '../../spaces/templates.js';
+import { getTemplate, listAllTemplates } from '../../spaces/template-registry.js';
 import { provisionSpace } from '../../spaces/provisioner.js';
 
 const router: IRouter = Router();
 
 // ─── GET /spaces/templates ─── list available templates (must be before /:id)
 router.get('/templates', async (_req, res) => {
-  const templates = getTemplates().map((t) => ({
-    key: t.key,
-    name: t.name,
-    description: t.description,
-    contentTypes: t.contentTypes.map((ct) => ct.key),
-    taxonomies: t.taxonomies.map((tx) => tx.key),
-    locales: t.locales.map((l) => l.code),
-  }));
-
+  const templates = listAllTemplates();
   res.json({ items: templates, total: templates.length });
 });
 
