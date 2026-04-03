@@ -1,6 +1,6 @@
 # HTMLess — Roadmap
 
-_Last updated: 2026-04-02_
+_Last updated: 2026-04-03_
 
 ## Vision
 
@@ -21,7 +21,7 @@ Build the cleanest, fastest headless CMS that makes Strapi look bloated. Open so
 - [x] Entry CRUD (draft-only, no publish yet)
 - [x] RBAC + user auth (login, sessions/JWT)
 - [x] Scoped API tokens (machine tokens for builds/integrations)
-- [ ] Publish JSON Schema for content types
+- [x] Publish JSON Schema for content types
 - [x] Basic admin UI shell (Next.js, login, navigation)
 
 ## Phase 2 — Editorial Core
@@ -30,12 +30,12 @@ Build the cleanest, fastest headless CMS that makes Strapi look bloated. Open so
 - [x] Draft/publish separation (entry_versions + entry_state)
 - [x] Version history + autosave
 - [x] Preview token issuance + Preview API reads
-- [ ] Scheduling (publishAt with background job)
+- [x] Scheduling (publishAt with background job)
 - [x] Link resolution rules (published-only CDA, draft-aware Preview)
 - [x] ETag/If-Match concurrency control on CMA writes
-- [ ] Admin UI: content editor with draft/publish controls
-- [ ] Admin UI: version history viewer
-- [ ] Admin UI: preview button (generates token, opens preview URL)
+- [x] Admin UI: content editor with draft/publish controls
+- [x] Admin UI: version history viewer
+- [x] Admin UI: preview button (generates token, opens preview URL)
 
 ## Phase 3 — Media Pipeline
 > Goal: Upload, metadata, transforms, CDN-ready delivery

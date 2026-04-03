@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { prisma } from '../../db.js';
+import { generateJsonSchema } from '../../schema/json-schema.js';
 
 import type { Request, Response } from 'express';
 
@@ -101,6 +102,28 @@ router.get('/types/:typeKey', async (req: Request, res: Response): Promise<void>
       createdAt: ct.createdAt.toISOString(),
       updatedAt: ct.updatedAt.toISOString(),
     });
+});
+
+// ── GET /schemas/types/:typeKey/json-schema ─────────────────────────
+router.get('/types/:typeKey/json-schema', async (req: Request, res: Response): Promise<void> => {
+  const spaceId = req.headers['x-space-id'] as string;
+  if (!spaceId) {
+    res.status(400).json({ error: 'missing_space', message: 'X-Space-Id header is required' });
+    return;
+  }
+
+  const ct = await prisma.contentType.findUnique({
+    where: { spaceId_key: { spaceId, key: req.params.typeKey } },
+    include: { fields: { orderBy: { sortOrder: 'asc' } } },
+  });
+
+  if (!ct) {
+    res.status(404).json({ error: 'not_found', message: `Content type "${req.params.typeKey}" not found` });
+    return;
+  }
+
+  const schema = generateJsonSchema(ct);
+  res.set('Cache-Control', 'public, max-age=300').set('Content-Type', 'application/schema+json').json(schema);
 });
 
 export default router;

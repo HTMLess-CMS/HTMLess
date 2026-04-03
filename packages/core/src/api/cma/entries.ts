@@ -483,4 +483,51 @@ router.post('/:id/unpublish', requireScope('cma:write'), async (req, res) => {
   });
 });
 
+// ─── POST /entries/:id/schedule ───
+router.post('/:id/schedule', requireScope('cma:write'), async (req, res) => {
+  const spaceId = getSpaceId(req);
+  if (!spaceId) {
+    res.status(400).json({ error: 'validation_error', message: 'spaceId is required' });
+    return;
+  }
+
+  const entry = await prisma.entry.findFirst({
+    where: { id: req.params.id, spaceId },
+    include: { state: true },
+  });
+  if (!entry) {
+    res.status(404).json({ error: 'not_found', message: 'Entry not found' });
+    return;
+  }
+
+  const { publishAt } = req.body;
+  if (!publishAt) {
+    res.status(400).json({ error: 'validation_error', message: 'publishAt (ISO date) is required' });
+    return;
+  }
+
+  const scheduledAt = new Date(publishAt);
+  if (isNaN(scheduledAt.getTime()) || scheduledAt <= new Date()) {
+    res.status(400).json({ error: 'validation_error', message: 'publishAt must be a valid future date' });
+    return;
+  }
+
+  await prisma.entryState.upsert({
+    where: { entryId: entry.id },
+    update: { status: 'scheduled', scheduledAt },
+    create: {
+      entryId: entry.id,
+      status: 'scheduled',
+      draftVersionId: entry.state!.draftVersionId,
+      scheduledAt,
+    },
+  });
+
+  res.json({
+    id: entry.id,
+    status: 'scheduled',
+    scheduledAt: scheduledAt.toISOString(),
+  });
+});
+
 export default router;
