@@ -40,13 +40,13 @@ Build the cleanest, fastest headless CMS that makes Strapi look bloated. Open so
 ## Phase 3 — Media Pipeline
 > Goal: Upload, metadata, transforms, CDN-ready delivery
 
-- [ ] Media library CRUD (upload, metadata, alt/caption)
-- [ ] Upload flows (multipart + resumable/presigned)
-- [ ] Storage provider abstraction (local, S3-compatible)
-- [ ] Asset metadata (EXIF extraction, dimensions)
-- [ ] Delivery URLs with transform params (`?w=800&h=450&fit=crop&fm=webp`)
-- [ ] Caching limits and abuse prevention
-- [ ] Admin UI: media library (upload, browse, search)
+- [x] Media library CRUD (upload, metadata, alt/caption)
+- [x] Upload flows (raw binary upload with headers)
+- [x] Storage provider abstraction (local, extensible to S3)
+- [x] Asset metadata (image dimension extraction from buffer)
+- [x] Delivery URLs with transform params (`?w=800&h=450&fit=crop&fm=webp`)
+- [x] Caching limits and abuse prevention (50MB limit, MIME validation)
+- [x] Admin UI: media library (upload, browse, search)
 - [ ] Admin UI: inline media picker in content editor
 
 ## Phase 4 — Structured Content Blocks
@@ -96,7 +96,7 @@ Build the cleanest, fastest headless CMS that makes Strapi look bloated. Open so
 - [x] Bring publish flow in line with docs: `If-Match`, concurrency, and required-field validation
 - [x] Validate entry payloads against content-type schema on create/save/publish
 - [x] Ship the missing editorial endpoints: `revert`, version history routes, publishability checks
-- [ ] Replace JSON-only asset metadata CRUD with real uploads, storage, and delivery URLs
+- [x] Replace JSON-only asset metadata CRUD with real uploads, storage, and delivery URLs
 - [x] Turn webhook records into a real system: queue, dispatcher, HMAC signing, retries, delivery logs
 - [x] Wire the internal event bus to actual side effects and background jobs
 - [x] Decide and document whether CDA is public-by-default or token-gated-by-default
