@@ -8,6 +8,7 @@ import { getWhiteLabelConfig } from '../../lib/white-label';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Setup Guide', href: '/dashboard/guide' },
   { label: 'Create from Layout', href: '/dashboard/create-from-layout' },
   { label: 'Content', href: '/dashboard/content' },
   { label: 'Schema', href: '/dashboard/schema' },
@@ -69,7 +70,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         display: 'flex',
         flexDirection: 'column',
       }}>
-        <div style={{ padding: '0 1.25rem', marginBottom: '2rem' }}>
+        <div style={{ padding: '0 1.25rem', marginBottom: '2rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/dashboard" style={{ textDecoration: 'none' }}>
             {whiteLabel?.brandName ? (
               <h1 style={{ fontSize: '1.2rem', fontWeight: 800, letterSpacing: '-0.03em', color: whiteLabel.primaryColor ?? 'var(--text)' }}>
@@ -83,6 +84,27 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 HTML<span style={{ color: 'var(--accent)' }}>ess</span>
               </h1>
             )}
+          </Link>
+          <Link
+            href="/dashboard/guide"
+            title="Setup Guide"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '26px',
+              height: '26px',
+              borderRadius: '50%',
+              background: 'var(--bg-elevated)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-muted)',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              textDecoration: 'none',
+              flexShrink: 0,
+            }}
+          >
+            ?
           </Link>
         </div>
         <nav style={{ flex: 1 }}>
