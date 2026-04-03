@@ -3,8 +3,11 @@
 [![CI](https://github.com/HTMLess-CMS/HTMLess/actions/workflows/ci.yml/badge.svg)](https://github.com/HTMLess-CMS/HTMLess/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-0.1.0-orange.svg)](package.json)
+[![Website](https://img.shields.io/badge/Website-htmless.com-111827?logo=googlechrome&logoColor=white)](https://htmless.com)
 
 [Website](https://htmless.com) · [Roadmap](docs/ROADMAP.md) · [Architecture](docs/ARCHITECTURE.md) · [Contributing](CONTRIBUTING.md) · [Developer Guide](CONTRIBUTING-DEV.md)
+
+Live site: https://htmless.com
 
 HTMLess is an open source headless CMS for developers, designers, editors, and agencies who want structured content, clean APIs, and Docker-first self-hosting without getting trapped in a bloated platform.
 
