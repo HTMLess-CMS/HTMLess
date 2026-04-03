@@ -48,11 +48,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           setSpaces(spaceList);
           const saved = getSpaceId();
           const match = spaceList.find(s => s.id === saved);
-          if (match) {
+          if (match && match.slug !== 'default') {
+            // Use saved space if it's not the system default
             setCurrentSpaceId(match.id);
           } else if (spaceList.length > 0) {
-            // Pick the last space (most recently created), not the default
-            const pick = spaceList[spaceList.length - 1];
+            // Prefer a non-default space, otherwise fall back to last
+            const nonDefault = spaceList.find(s => s.slug !== 'default');
+            const pick = nonDefault || spaceList[spaceList.length - 1];
             setSpaceId(pick.id);
             setCurrentSpaceId(pick.id);
           }
