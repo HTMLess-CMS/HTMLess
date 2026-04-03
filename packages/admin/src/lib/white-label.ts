@@ -1,4 +1,4 @@
-import { apiGet, apiPatch } from './api.js';
+import { apiGet, apiPatch } from './api';
 
 /**
  * White-label configuration for a space.

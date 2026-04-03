@@ -855,6 +855,8 @@ describe('CDA', { concurrency: 1 }, () => {
           pagination: { total: number };
         }>(`/cda/v1/content/article?slug=${cdaSlug}`, { spaceId }),
       (response) => response.status === 200 && response.body.items.some((entry) => entry.id === cdaEntryId),
+      10_000,
+      250,
     );
 
     assert.equal(res.status, 200);
@@ -876,10 +878,17 @@ describe('CDA', { concurrency: 1 }, () => {
   });
 
   it('CDA supports ?slug= filter', async () => {
-    const res = await api<{
-      items: Array<{ slug: string }>;
-      pagination: { total: number };
-    }>(`/cda/v1/content/article?slug=${cdaSlug}`, { spaceId });
+    const res = await waitFor(
+      'slug-filtered CDA entry',
+      async () =>
+        api<{
+          items: Array<{ slug: string }>;
+          pagination: { total: number };
+        }>(`/cda/v1/content/article?slug=${cdaSlug}`, { spaceId }),
+      (response) => response.status === 200 && response.body.pagination.total === 1,
+      10_000,
+      250,
+    );
 
     assert.equal(res.status, 200);
     assert.equal(res.body.pagination.total, 1, 'slug filter should return exactly one result');
