@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { apiGet, apiPost, apiDelete } from '@/lib/api';
+import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
 
 interface Field {
   key: string;
   name: string;
   type: string;
   required: boolean;
+  sortOrder?: number;
 }
 
 interface ContentType {
@@ -51,6 +52,21 @@ export default function SchemaEditorPage() {
   const [adding, setAdding] = useState(false);
   const [deletingField, setDeletingField] = useState<string | null>(null);
 
+  // Drag and drop
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [reordering, setReordering] = useState(false);
+
+  // Inline editing
+  const [editingFieldKey, setEditingFieldKey] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const editInputRef = useRef<HTMLInputElement>(null);
+
+  // Preview API response
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+
   const loadType = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -67,6 +83,14 @@ export default function SchemaEditorPage() {
   useEffect(() => {
     loadType();
   }, [loadType]);
+
+  // Focus the inline edit input when it appears
+  useEffect(() => {
+    if (editingFieldKey && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.select();
+    }
+  }, [editingFieldKey]);
 
   function showSuccess(msg: string) {
     setSuccessMsg(msg);
@@ -123,17 +147,159 @@ export default function SchemaEditorPage() {
     }
   }
 
+  // ── Drag and drop handlers ──
+
+  function handleDragStart(index: number) {
+    setDragIndex(index);
+  }
+
+  function handleDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  }
+
+  function handleDragLeave() {
+    setDragOverIndex(null);
+  }
+
+  async function handleDrop(e: React.DragEvent, targetIndex: number) {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === targetIndex || !contentType) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // Reorder fields locally
+    const fields = [...contentType.fields];
+    const [moved] = fields.splice(dragIndex, 1);
+    fields.splice(targetIndex, 0, moved);
+
+    // Optimistic UI update
+    setContentType({ ...contentType, fields });
+    setDragIndex(null);
+    setDragOverIndex(null);
+
+    // Send PATCH to update sortOrder
+    setReordering(true);
+    try {
+      const order = fields.map((f, i) => ({ key: f.key, sortOrder: i }));
+      await apiPatch(`/cma/v1/schemas/types/${typeKey}`, { fieldOrder: order });
+      showSuccess('Field order updated');
+    } catch (err) {
+      // Revert on failure
+      setError(err instanceof Error ? err.message : 'Failed to reorder fields');
+      await loadType();
+    } finally {
+      setReordering(false);
+    }
+  }
+
+  function handleDragEnd() {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }
+
+  // ── Inline editing handlers ──
+
+  function startEditing(field: Field) {
+    setEditingFieldKey(field.key);
+    setEditingName(field.name);
+  }
+
+  async function saveInlineEdit() {
+    if (!editingFieldKey || !editingName.trim() || !contentType) {
+      setEditingFieldKey(null);
+      return;
+    }
+
+    const field = contentType.fields.find((f) => f.key === editingFieldKey);
+    if (!field || field.name === editingName.trim()) {
+      setEditingFieldKey(null);
+      return;
+    }
+
+    // Optimistic update
+    const updatedFields = contentType.fields.map((f) =>
+      f.key === editingFieldKey ? { ...f, name: editingName.trim() } : f,
+    );
+    setContentType({ ...contentType, fields: updatedFields });
+    const savedKey = editingFieldKey;
+    setEditingFieldKey(null);
+
+    try {
+      await apiPatch(`/cma/v1/schemas/types/${typeKey}/fields/${savedKey}`, {
+        name: editingName.trim(),
+      });
+      showSuccess(`Field renamed to "${editingName.trim()}"`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to rename field');
+      await loadType();
+    }
+  }
+
+  function handleEditKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      saveInlineEdit();
+    } else if (e.key === 'Escape') {
+      setEditingFieldKey(null);
+    }
+  }
+
+  // ── Preview API response ──
+
+  async function handlePreviewResponse() {
+    setShowPreview(true);
+    setPreviewLoading(true);
+    setPreviewData(null);
+    try {
+      const data = await apiGet(`/cda/v1/content/${typeKey}?limit=1`);
+      setPreviewData(JSON.stringify(data, null, 2));
+    } catch (err) {
+      setPreviewData(
+        JSON.stringify(
+          {
+            error: true,
+            message: err instanceof Error ? err.message : 'Failed to fetch preview',
+            hint: 'No published entries found for this type, or the CDA endpoint is not available.',
+          },
+          null,
+          2,
+        ),
+      );
+    } finally {
+      setPreviewLoading(false);
+    }
+  }
+
+  // ── Styles ──
+
   const typeColorMap: Record<string, string> = {
-    text: '#6366f1',
+    text: '#3b82f6',
     richtext: '#8b5cf6',
-    number: '#06b6d4',
+    number: '#22c55e',
     boolean: '#f59e0b',
     date: '#ec4899',
-    media: '#10b981',
-    reference: '#f97316',
+    media: '#a855f7',
+    reference: '#ec4899',
     json: '#64748b',
-    slug: '#22d3ee',
+    slug: '#06b6d4',
     enum: '#a78bfa',
+  };
+
+  const typeIconMap: Record<string, string> = {
+    text: 'T',
+    richtext: 'R',
+    number: '#',
+    boolean: '?',
+    date: 'D',
+    media: 'M',
+    reference: 'L',
+    json: '{}',
+    slug: '/',
+    enum: 'E',
   };
 
   const inputStyle: React.CSSProperties = {
@@ -199,7 +365,7 @@ export default function SchemaEditorPage() {
         >
           &larr; Back
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
           <h2 style={{ fontSize: '1.35rem', fontWeight: 700 }}>{contentType.name}</h2>
           <code style={{
             fontSize: '0.8rem',
@@ -220,6 +386,22 @@ export default function SchemaEditorPage() {
           }}>
             v{contentType.version}
           </span>
+          <button
+            onClick={handlePreviewResponse}
+            style={{
+              ...btnSecondary,
+              padding: '0.3rem 0.75rem',
+              fontSize: '0.72rem',
+              marginLeft: 'auto',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              color: 'var(--accent-light)',
+              borderColor: 'rgba(99,102,241,0.3)',
+            }}
+          >
+            <span style={{ fontSize: '0.8rem' }}>&#x25B6;</span> Preview API Response
+          </button>
         </div>
       </div>
 
@@ -251,31 +433,125 @@ export default function SchemaEditorPage() {
         </div>
       )}
 
+      {/* Preview API Response Panel */}
+      {showPreview && (
+        <div style={{
+          ...cardStyle,
+          marginBottom: '1.5rem',
+          position: 'relative',
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+            <h3 style={{ fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <span style={{
+                fontSize: '0.65rem',
+                fontWeight: 700,
+                padding: '0.15rem 0.4rem',
+                borderRadius: '4px',
+                background: 'rgba(34,197,94,0.15)',
+                color: '#22c55e',
+                letterSpacing: '0.04em',
+              }}>
+                GET
+              </span>
+              /cda/v1/content/{typeKey}
+            </h3>
+            <button
+              onClick={() => setShowPreview(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-dim)',
+                cursor: 'pointer',
+                fontSize: '1.1rem',
+                padding: '0.15rem 0.35rem',
+                lineHeight: 1,
+              }}
+            >
+              x
+            </button>
+          </div>
+          {previewLoading ? (
+            <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem' }}>Fetching...</p>
+          ) : (
+            <pre style={{
+              background: 'var(--bg)',
+              border: '1px solid var(--border)',
+              borderRadius: '8px',
+              padding: '1rem',
+              overflow: 'auto',
+              maxHeight: '400px',
+              fontSize: '0.78rem',
+              lineHeight: '1.6',
+              color: 'var(--text-muted)',
+              fontFamily: 'monospace',
+            }}>
+              {previewData}
+            </pre>
+          )}
+        </div>
+      )}
+
       {/* Fields List */}
       <div style={{ ...cardStyle, marginBottom: '1.5rem' }}>
-        <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem' }}>
-          Fields ({contentType.fields?.length ?? 0})
-        </h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>
+            Fields ({contentType.fields?.length ?? 0})
+          </h3>
+          {reordering && (
+            <span style={{ fontSize: '0.72rem', color: 'var(--accent-light)', fontWeight: 500 }}>
+              Saving order...
+            </span>
+          )}
+        </div>
         {!contentType.fields || contentType.fields.length === 0 ? (
           <p style={{ color: 'var(--text-dim)', fontSize: '0.85rem' }}>
             No fields defined. Add your first field below.
           </p>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {contentType.fields.map((field) => (
+            {contentType.fields.map((field, index) => (
               <div
                 key={field.key}
+                draggable
+                onDragStart={() => handleDragStart(index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, index)}
+                onDragEnd={handleDragEnd}
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
                   padding: '0.7rem 0.85rem',
-                  background: 'var(--bg)',
+                  background: dragIndex === index
+                    ? 'var(--bg-elevated)'
+                    : dragOverIndex === index
+                      ? 'color-mix(in srgb, var(--accent) 8%, var(--bg))'
+                      : 'var(--bg)',
                   borderRadius: '8px',
-                  border: '1px solid var(--border)',
+                  border: dragOverIndex === index
+                    ? '1px solid var(--accent)'
+                    : '1px solid var(--border)',
+                  opacity: dragIndex === index ? 0.5 : 1,
+                  cursor: 'grab',
+                  transition: 'border-color 0.15s, background 0.15s',
+                  userSelect: 'none',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 0 }}>
+                  {/* Drag handle */}
+                  <span style={{
+                    color: 'var(--text-dim)',
+                    fontSize: '0.75rem',
+                    cursor: 'grab',
+                    userSelect: 'none',
+                    flexShrink: 0,
+                    letterSpacing: '0.05em',
+                  }}>
+                    &#x2630;
+                  </span>
+
+                  {/* Type badge with icon */}
                   <span style={{
                     fontSize: '0.7rem',
                     fontWeight: 600,
@@ -285,11 +561,63 @@ export default function SchemaEditorPage() {
                     color: typeColorMap[field.type] ?? '#6366f1',
                     textTransform: 'uppercase',
                     letterSpacing: '0.03em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.3rem',
+                    flexShrink: 0,
                   }}>
+                    <span style={{
+                      fontSize: '0.65rem',
+                      fontWeight: 800,
+                      opacity: 0.7,
+                    }}>
+                      {typeIconMap[field.type] ?? '?'}
+                    </span>
                     {field.type}
                   </span>
-                  <div>
-                    <span style={{ fontSize: '0.875rem', fontWeight: 500 }}>{field.name}</span>
+
+                  {/* Field name (editable) */}
+                  <div style={{ minWidth: 0 }}>
+                    {editingFieldKey === field.key ? (
+                      <input
+                        ref={editInputRef}
+                        value={editingName}
+                        onChange={(e) => setEditingName(e.target.value)}
+                        onBlur={saveInlineEdit}
+                        onKeyDown={handleEditKeyDown}
+                        style={{
+                          background: 'var(--bg-elevated)',
+                          border: '1px solid var(--accent)',
+                          borderRadius: '4px',
+                          color: 'var(--text)',
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          padding: '0.15rem 0.4rem',
+                          outline: 'none',
+                          width: '200px',
+                        }}
+                      />
+                    ) : (
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          startEditing(field);
+                        }}
+                        style={{
+                          fontSize: '0.875rem',
+                          fontWeight: 500,
+                          cursor: 'text',
+                          padding: '0.1rem 0.25rem',
+                          borderRadius: '3px',
+                          transition: 'background 0.1s',
+                        }}
+                        onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-elevated)')}
+                        onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
+                        title="Click to edit name"
+                      >
+                        {field.name}
+                      </span>
+                    )}
                     <code style={{
                       marginLeft: '0.5rem',
                       fontSize: '0.75rem',
@@ -298,6 +626,7 @@ export default function SchemaEditorPage() {
                       {field.key}
                     </code>
                   </div>
+
                   {field.required && (
                     <span style={{
                       fontSize: '0.65rem',
@@ -307,6 +636,7 @@ export default function SchemaEditorPage() {
                       background: 'rgba(239,68,68,0.15)',
                       color: 'var(--red)',
                       textTransform: 'uppercase',
+                      flexShrink: 0,
                     }}>
                       Required
                     </span>
@@ -324,6 +654,8 @@ export default function SchemaEditorPage() {
                     fontSize: '0.75rem',
                     padding: '0.25rem 0.5rem',
                     opacity: deletingField === field.key ? 0.5 : 1,
+                    flexShrink: 0,
+                    marginLeft: '0.5rem',
                   }}
                 >
                   {deletingField === field.key ? '...' : 'Delete'}
@@ -331,6 +663,11 @@ export default function SchemaEditorPage() {
               </div>
             ))}
           </div>
+        )}
+        {contentType.fields && contentType.fields.length > 1 && (
+          <p style={{ color: 'var(--text-dim)', fontSize: '0.72rem', marginTop: '0.75rem', fontStyle: 'italic' }}>
+            Drag fields to reorder. Click a field name to rename it.
+          </p>
         )}
       </div>
 

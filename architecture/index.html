@@ -1,0 +1,1103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTMLess Architecture - APIs, Data Model, and Deployment</title>
+    <meta name="description" content="Explore the HTMLess architecture with a styled overview of the API surfaces, PostgreSQL data model, Redis usage, deployment topology, and codebase structure.">
+    <meta name="keywords" content="HTMLess architecture, headless CMS architecture, PostgreSQL CMS architecture, CMS API design, content delivery architecture">
+    <meta name="author" content="HTMLess">
+    <meta name="robots" content="index, follow">
+    <meta name="theme-color" content="#09090b">
+    <link rel="canonical" href="https://htmless.com/architecture/">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <link rel="alternate icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+    <link rel="manifest" href="/site.webmanifest">
+
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="HTMLess Architecture">
+    <meta property="og:description" content="A visual guide to how HTMLess is built: CMA, CDA, Preview APIs, PostgreSQL, Redis, Docker-first deployment, and the package layout.">
+    <meta property="og:url" content="https://htmless.com/architecture/">
+    <meta property="og:site_name" content="HTMLess">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="HTMLess Architecture">
+    <meta name="twitter:description" content="See how HTMLess is structured across APIs, data, deployment, and the codebase in one architecture page.">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #09090b;
+            --bg-surface: #17171c;
+            --bg-elevated: #1f2026;
+            --border: #27272a;
+            --border-subtle: #1d1e24;
+            --text: #fafafa;
+            --text-muted: #a1a1aa;
+            --text-dim: #71717a;
+            --accent: #6366f1;
+            --accent-light: #8b93ff;
+            --accent-glow: rgba(99, 102, 241, 0.16);
+            --green: #22c55e;
+            --green-glow: rgba(34, 197, 94, 0.14);
+            --amber: #f59e0b;
+            --amber-glow: rgba(245, 158, 11, 0.14);
+            --cyan: #22d3ee;
+            --cyan-glow: rgba(34, 211, 238, 0.14);
+        }
+        html {
+            scroll-behavior: smooth;
+            overflow-x: clip;
+            background: var(--bg);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background:
+                radial-gradient(circle at top center, rgba(99, 102, 241, 0.16), transparent 36%),
+                linear-gradient(180deg, #09090b 0%, #0d0d12 100%);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            overflow-x: clip;
+        }
+        @supports not (overflow: clip) {
+            html, body { overflow-x: hidden; }
+        }
+        code, .mono { font-family: 'JetBrains Mono', monospace; }
+        a { color: inherit; }
+        section[id] { scroll-margin-top: 84px; }
+
+        nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(16px) saturate(180%);
+            background: rgba(9, 9, 11, 0.76);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .nav-inner,
+        .container,
+        .footer-inner {
+            width: min(1180px, calc(100% - 2rem));
+            margin: 0 auto;
+        }
+        .nav-inner {
+            padding: 0.9rem 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+        .nav-logo {
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-decoration: none;
+            letter-spacing: -0.03em;
+        }
+        .nav-logo span { color: var(--accent-light); }
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 600;
+            padding: 0.45rem 0.8rem;
+            border-radius: 999px;
+            transition: 0.2s;
+        }
+        .nav-links a:hover,
+        .nav-links a.active {
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        .nav-github {
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+        }
+
+        .hero {
+            padding: 5.2rem 0 2.8rem;
+        }
+        .hero-inner {
+            display: grid;
+            grid-template-columns: 1.1fr 0.9fr;
+            gap: 1.35rem;
+            align-items: end;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            border: 1px solid var(--border);
+            background: rgba(23, 23, 28, 0.78);
+            border-radius: 999px;
+            padding: 0.38rem 0.82rem;
+            margin-bottom: 1rem;
+            font-size: 0.74rem;
+            color: var(--text-muted);
+        }
+        .hero-badge .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 16px var(--green-glow);
+        }
+        .hero-copy h1 {
+            font-size: clamp(2.2rem, 4.8vw, 4rem);
+            font-weight: 900;
+            line-height: 0.98;
+            letter-spacing: -0.05em;
+            margin-bottom: 0.9rem;
+        }
+        .hero-copy h1 span {
+            background: linear-gradient(135deg, var(--accent-light) 0%, var(--cyan) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-copy p {
+            color: var(--text-muted);
+            font-size: 0.98rem;
+            max-width: 660px;
+        }
+        .hero-actions {
+            display: flex;
+            gap: 0.9rem;
+            flex-wrap: wrap;
+            margin-top: 1.35rem;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            text-decoration: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.15rem;
+            font-size: 0.88rem;
+            font-weight: 700;
+            transition: 0.2s;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: var(--text);
+            box-shadow: 0 0 24px var(--accent-glow);
+        }
+        .btn-primary:hover { background: var(--accent-light); }
+        .btn-ghost {
+            border: 1px solid var(--border);
+            color: var(--text);
+            background: rgba(255, 255, 255, 0.02);
+        }
+        .btn-ghost:hover { border-color: var(--text-muted); }
+
+        .hero-panel {
+            background: rgba(23, 23, 28, 0.84);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 1.05rem;
+            box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+        }
+        .hero-panel h2 {
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.11em;
+            color: var(--text-dim);
+            margin-bottom: 0.8rem;
+        }
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.9rem;
+        }
+        .summary-card {
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 16px;
+            padding: 0.9rem;
+        }
+        .summary-card strong {
+            display: block;
+            font-size: 1.28rem;
+            line-height: 1.05;
+            letter-spacing: -0.04em;
+            margin-bottom: 0.2rem;
+        }
+        .summary-card span {
+            display: block;
+            color: var(--text-muted);
+            font-size: 0.8rem;
+        }
+
+        .section {
+            padding: 1rem 0 4.75rem;
+        }
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 1.5rem;
+            align-items: end;
+            margin-bottom: 2rem;
+        }
+        .section-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--accent-light);
+            margin-bottom: 0.6rem;
+        }
+        .section-title {
+            font-size: clamp(1.7rem, 3.4vw, 2.5rem);
+            line-height: 1.12;
+            letter-spacing: -0.04em;
+        }
+        .section-desc {
+            color: var(--text-muted);
+            max-width: 680px;
+            font-size: 0.96rem;
+        }
+
+        .tab-shell {
+            background: rgba(23, 23, 28, 0.78);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 1rem;
+        }
+        .tab-buttons {
+            display: flex;
+            gap: 0.75rem;
+            overflow-x: auto;
+            padding-bottom: 0.3rem;
+            scrollbar-width: none;
+        }
+        .tab-buttons::-webkit-scrollbar { display: none; }
+        .tab-btn {
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.84rem;
+            border-radius: 999px;
+            padding: 0.7rem 0.95rem;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+        .tab-btn.active,
+        .tab-btn:hover {
+            color: var(--text);
+            background: rgba(99, 102, 241, 0.12);
+            border-color: rgba(99, 102, 241, 0.3);
+        }
+        .tab-panel {
+            display: none;
+            margin-top: 1rem;
+        }
+        .tab-panel.active { display: block; }
+
+        .facts-grid,
+        .domain-grid,
+        .stack-grid,
+        .package-grid,
+        .note-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+        }
+        .fact-card,
+        .domain-card,
+        .stack-card,
+        .package-card,
+        .note-card,
+        .big-card,
+        .flow-card,
+        .tree-card,
+        .philosophy-card {
+            background: rgba(9, 9, 11, 0.76);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+        }
+        .fact-card,
+        .domain-card,
+        .stack-card,
+        .package-card,
+        .note-card,
+        .big-card,
+        .tree-card,
+        .philosophy-card {
+            padding: 1.15rem;
+        }
+        .fact-card h3,
+        .domain-card h3,
+        .stack-card h3,
+        .package-card h3,
+        .big-card h3,
+        .tree-card h3,
+        .philosophy-card h3,
+        .note-card h3 {
+            font-size: 1.02rem;
+            letter-spacing: -0.02em;
+            margin-bottom: 0.45rem;
+        }
+        .fact-card p,
+        .domain-card p,
+        .stack-card p,
+        .package-card p,
+        .big-card p,
+        .note-card p,
+        .philosophy-card p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+        .kicker {
+            color: var(--text-dim);
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 0.55rem;
+        }
+        .facts-grid .fact-card strong {
+            display: block;
+            font-size: 0.92rem;
+            color: var(--text);
+            margin-bottom: 0.18rem;
+        }
+
+        .split-grid {
+            display: grid;
+            grid-template-columns: 1.05fr 0.95fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .list {
+            list-style: none;
+            display: grid;
+            gap: 0.55rem;
+            margin-top: 0.85rem;
+        }
+        .list li {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            position: relative;
+            padding-left: 1rem;
+        }
+        .list li::before {
+            content: '';
+            position: absolute;
+            top: 0.62rem;
+            left: 0;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent-light);
+        }
+        .flow-kicker {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.28rem 0.55rem;
+            border-radius: 999px;
+            margin-top: 0.8rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .tag-write { background: rgba(99, 102, 241, 0.12); color: var(--accent-light); }
+        .tag-read { background: rgba(34, 197, 94, 0.12); color: var(--green); }
+        .tag-async { background: rgba(245, 158, 11, 0.12); color: var(--amber); }
+
+        .slider-block + .slider-block { margin-top: 2rem; }
+        .slider-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .slider-head h3 {
+            font-size: 1.05rem;
+            letter-spacing: -0.02em;
+        }
+        .slider-head p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            max-width: 640px;
+        }
+        .slider-controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        .slider-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.03);
+            color: var(--text);
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .slider-btn:hover { border-color: var(--text-muted); }
+        .slider-track {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            scroll-snap-type: x mandatory;
+            scroll-behavior: smooth;
+            padding-bottom: 0.6rem;
+            scrollbar-width: none;
+        }
+        .slider-track::-webkit-scrollbar { display: none; }
+        .flow-card {
+            scroll-snap-align: start;
+            flex: 0 0 min(76vw, 270px);
+            max-width: 270px;
+            padding: 1.1rem;
+        }
+        .flow-card h4 {
+            font-size: 1rem;
+            margin-bottom: 0.35rem;
+            letter-spacing: -0.02em;
+        }
+        .flow-card p {
+            color: var(--text-muted);
+            font-size: 0.86rem;
+        }
+        .flow-index {
+            width: 34px;
+            height: 34px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            background: rgba(99, 102, 241, 0.14);
+            color: var(--accent-light);
+            font-weight: 800;
+            margin-bottom: 0.8rem;
+        }
+
+        .tree-card pre {
+            color: var(--text-muted);
+            font-size: 0.8rem;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+        .tree-card .mono strong {
+            color: var(--text);
+            font-weight: 600;
+        }
+
+        footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 2rem 0 3rem;
+        }
+        .footer-inner {
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 1rem;
+            align-items: center;
+        }
+        .footer-copy {
+            color: var(--text-dim);
+            font-size: 0.8rem;
+        }
+        .footer-links {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .footer-links a {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.84rem;
+        }
+        .footer-links a:hover { color: var(--text); }
+
+        @media (max-width: 1080px) {
+            .hero-inner,
+            .split-grid,
+            .facts-grid,
+            .domain-grid,
+            .stack-grid,
+            .package-grid,
+            .note-grid,
+            .footer-inner {
+                grid-template-columns: 1fr;
+            }
+            .section-header {
+                flex-direction: column;
+                align-items: start;
+            }
+        }
+        @media (max-width: 760px) {
+            .nav-inner,
+            .container,
+            .footer-inner {
+                width: min(1180px, calc(100% - 1.25rem));
+            }
+            .hero {
+                padding: 4.6rem 0 2.4rem;
+            }
+            .hero-copy h1 {
+                font-size: 2rem;
+            }
+            .hero-copy p,
+            .section-desc {
+                font-size: 0.92rem;
+            }
+            .hero-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .btn { width: 100%; }
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+            .tab-shell { padding: 0.85rem; }
+            .flow-card {
+                flex-basis: min(82vw, 250px);
+            }
+            .footer-links {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-inner">
+            <a href="/" class="nav-logo">HTML<span>ess</span></a>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/architecture/" class="active">Architecture</a>
+                <a href="/roadmap/">Roadmap</a>
+                <a href="/pricing/">Pricing</a>
+                <a href="https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener" class="nav-github">GitHub</a>
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        <section class="hero">
+            <div class="container hero-inner">
+                <div class="hero-copy">
+                    <div class="hero-badge">
+                        <span class="dot"></span>
+                        Architecture source doc updated April 2, 2026
+                    </div>
+                    <h1>HTMLess architecture for <span>builders who want clarity</span></h1>
+                    <p>
+                        This page turns the architecture document into a readable system map: three API surfaces, a PostgreSQL source of truth, Redis for cache and queues, Docker-first deployment, and a monorepo split across admin, API, and worker packages.
+                    </p>
+                    <div class="hero-actions">
+                        <a href="#architecture-tabs" class="btn btn-primary">Open Architecture Tabs</a>
+                        <a href="/roadmap/" class="btn btn-ghost">See Roadmap</a>
+                    </div>
+                </div>
+                <aside class="hero-panel">
+                    <h2>Architecture Snapshot</h2>
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <strong>3 APIs</strong>
+                            <span>CMA, CDA, and Preview with explicit semantics</span>
+                        </div>
+                        <div class="summary-card">
+                            <strong>PostgreSQL</strong>
+                            <span>Relational source of truth with versioned content state</span>
+                        </div>
+                        <div class="summary-card">
+                            <strong>Redis</strong>
+                            <span>Cache, queue, rate-limit, and async coordination</span>
+                        </div>
+                        <div class="summary-card">
+                            <strong>Docker-first</strong>
+                            <span>Admin, API, worker, and infrastructure services</span>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <section class="section" id="architecture-tabs">
+            <div class="container">
+                <div class="section-header">
+                    <div>
+                        <p class="section-label">Architecture Tabs</p>
+                        <h2 class="section-title">Explore the system from the angle you care about</h2>
+                        <p class="section-desc">The tabs below are pulled from the architecture document itself, then reorganized into overview, APIs, data model, infrastructure, and codebase views.</p>
+                    </div>
+                </div>
+
+                <div class="tab-shell">
+                    <div class="tab-buttons" role="tablist" aria-label="Architecture tabs">
+                        <button class="tab-btn active" type="button" role="tab" aria-selected="true" aria-controls="tab-overview" id="tab-btn-overview" data-tab-target="tab-overview">Overview</button>
+                        <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-apis" id="tab-btn-apis" data-tab-target="tab-apis">API Surfaces</button>
+                        <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-data" id="tab-btn-data" data-tab-target="tab-data">Data Model</button>
+                        <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-infra" id="tab-btn-infra" data-tab-target="tab-infra">Infrastructure</button>
+                        <button class="tab-btn" type="button" role="tab" aria-selected="false" aria-controls="tab-codebase" id="tab-btn-codebase" data-tab-target="tab-codebase">Codebase</button>
+                    </div>
+
+                    <div class="tab-panel active" id="tab-overview" role="tabpanel" aria-labelledby="tab-btn-overview">
+                        <div class="facts-grid">
+                            <article class="fact-card">
+                                <div class="kicker">Type</div>
+                                <strong>Headless CMS</strong>
+                                <p>Open source core with room for hosted and SaaS layers on top.</p>
+                            </article>
+                            <article class="fact-card">
+                                <div class="kicker">Backend</div>
+                                <strong>Node.js + Prisma</strong>
+                                <p>The API runtime is in the monorepo core package, backed by PostgreSQL.</p>
+                            </article>
+                            <article class="fact-card">
+                                <div class="kicker">Frontend</div>
+                                <strong>Next.js Admin</strong>
+                                <p>The editing interface lives as a separate app instead of being mixed into the API.</p>
+                            </article>
+                            <article class="fact-card">
+                                <div class="kicker">Cache / Queue</div>
+                                <strong>Redis</strong>
+                                <p>Used for caching, queueing, retries, and rate-limit state.</p>
+                            </article>
+                            <article class="fact-card">
+                                <div class="kicker">Tenancy</div>
+                                <strong>Multi-space</strong>
+                                <p>Shared database with scope-based isolation around spaces, roles, and content.</p>
+                            </article>
+                            <article class="fact-card">
+                                <div class="kicker">Deployment</div>
+                                <strong>Docker-first</strong>
+                                <p>Admin, API, worker, PostgreSQL, and Redis are all part of the deployment story.</p>
+                            </article>
+                        </div>
+
+                        <div class="split-grid">
+                            <article class="philosophy-card">
+                                <div class="kicker">Philosophy</div>
+                                <h3>UX over feature count</h3>
+                                <p>HTMLess is inspired by WordPress-style authoring ergonomics, but without server-rendered theme assumptions. The architecture is meant to make the path from schema to published API feel clean, not overloaded.</p>
+                                <ul class="list">
+                                    <li>Schema</li>
+                                    <li>Content</li>
+                                    <li>API</li>
+                                    <li>Preview</li>
+                                    <li>Publish</li>
+                                </ul>
+                            </article>
+                            <article class="big-card">
+                                <div class="kicker">Why this shape</div>
+                                <h3>Separate concerns, clearer operations</h3>
+                                <p>The architecture avoids a one-bucket CMS model. Editors hit CMA, public clients hit CDA, preview uses short-lived access, the worker owns retries, and the database remains the canonical truth.</p>
+                                <ul class="list">
+                                    <li>Cleaner mental model for developers and agencies</li>
+                                    <li>Safer publish semantics than a single all-purpose API</li>
+                                    <li>A solid base for Phase 9 delivery optimization</li>
+                                </ul>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="tab-apis" role="tabpanel" aria-labelledby="tab-btn-apis">
+                        <div class="domain-grid">
+                            <article class="domain-card">
+                                <div class="kicker">CMA</div>
+                                <h3><span class="mono">/cma/v1</span></h3>
+                                <p>Write and read surface for editors, admin UI, and automation. Returns drafts, metadata, and versions.</p>
+                                <span class="flow-kicker tag-write">Write / Read</span>
+                            </article>
+                            <article class="domain-card">
+                                <div class="kicker">Preview</div>
+                                <h3><span class="mono">/preview/v1</span></h3>
+                                <p>Draft-inclusive reads protected by preview tokens so teams can review unpublished changes.</p>
+                                <span class="flow-kicker tag-write">Draft Reads</span>
+                            </article>
+                            <article class="domain-card">
+                                <div class="kicker">CDA</div>
+                                <h3><span class="mono">/cda/v1</span></h3>
+                                <p>Read-only, published-only, cacheable delivery for public websites, apps, and frontends.</p>
+                                <span class="flow-kicker tag-read">Read-only</span>
+                            </article>
+                        </div>
+
+                        <div class="split-grid">
+                            <article class="big-card">
+                                <div class="kicker">Semantics</div>
+                                <h3>Three external surfaces, strict behavior</h3>
+                                <p>The architecture doc treats the three APIs as contract boundaries, not just route prefixes. That is why preview can be draft-inclusive, CDA can stay public-facing and cacheable, and CMA can remain editor-first.</p>
+                                <ul class="list">
+                                    <li>CMA returns draft state, metadata, and versioning detail</li>
+                                    <li>Preview focuses on safe draft review with scoped access</li>
+                                    <li>CDA stays published-only and CDN-friendly by design</li>
+                                </ul>
+                            </article>
+                            <article class="big-card">
+                                <div class="kicker">System links</div>
+                                <h3>Where the APIs connect</h3>
+                                <p>CMA writes into the content store and emits events. Preview reads drafts. CDA serves published state. The worker consumes async jobs and pushes signed webhooks with retries.</p>
+                                <ul class="list">
+                                    <li>Content store and entry state sit behind the APIs</li>
+                                    <li>Event bus decouples publish actions from side effects</li>
+                                    <li>Webhook dispatcher owns delivery attempts and status</li>
+                                </ul>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="tab-data" role="tabpanel" aria-labelledby="tab-btn-data">
+                        <div class="domain-grid">
+                            <article class="domain-card">
+                                <div class="kicker">Identity + Tenancy</div>
+                                <h3>Spaces, users, roles, bindings</h3>
+                                <p>Spaces define the tenant boundary. Users, roles, and role bindings scope access within each space.</p>
+                            </article>
+                            <article class="domain-card">
+                                <div class="kicker">Schema Registry</div>
+                                <h3>Content types + fields</h3>
+                                <p>Content models live in the database so schemas can evolve without requiring code redeploys.</p>
+                            </article>
+                            <article class="domain-card">
+                                <div class="kicker">Content State</div>
+                                <h3>Entries, versions, state pointers</h3>
+                                <p>Stable entry identity, immutable snapshots, and draft/published pointers define content history and publishing.</p>
+                            </article>
+                            <article class="domain-card">
+                                <div class="kicker">Access Tokens</div>
+                                <h3>API + preview tokens</h3>
+                                <p>Machine tokens and short-lived preview tokens enforce scoped access across public and editorial workflows.</p>
+                            </article>
+                            <article class="domain-card">
+                                <div class="kicker">Media + Usage</div>
+                                <h3>Assets and asset usages</h3>
+                                <p>Media metadata is tracked separately from content, with references recorded for better visibility and control.</p>
+                            </article>
+                            <article class="domain-card">
+                                <div class="kicker">Events + Audit</div>
+                                <h3>Webhooks and audit logs</h3>
+                                <p>Outbound integrations and security-sensitive actions are captured instead of disappearing into the background.</p>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="tab-infra" role="tabpanel" aria-labelledby="tab-btn-infra">
+                        <div class="stack-grid">
+                            <article class="stack-card">
+                                <div class="kicker">Entry point</div>
+                                <h3>Traefik</h3>
+                                <p>SSL termination and routing sit in front of the admin and API services.</p>
+                            </article>
+                            <article class="stack-card">
+                                <div class="kicker">Frontend</div>
+                                <h3><span class="mono">htmless-admin</span></h3>
+                                <p>Next.js admin application served separately from the backend runtime.</p>
+                            </article>
+                            <article class="stack-card">
+                                <div class="kicker">Core API</div>
+                                <h3><span class="mono">htmless-api</span></h3>
+                                <p>Node.js service exposing CMA, CDA, and Preview APIs.</p>
+                            </article>
+                            <article class="stack-card">
+                                <div class="kicker">Async work</div>
+                                <h3><span class="mono">htmless-worker</span></h3>
+                                <p>Handles jobs, retries, and webhook dispatch without blocking the API layer.</p>
+                            </article>
+                            <article class="stack-card">
+                                <div class="kicker">Primary data</div>
+                                <h3>PostgreSQL</h3>
+                                <p>Relational datastore for tenancy, schema, content, assets, webhooks, and audit logs.</p>
+                            </article>
+                            <article class="stack-card">
+                                <div class="kicker">Transient state</div>
+                                <h3>Redis</h3>
+                                <p>Cache, queues, invalidation, and rate limiting all live here.</p>
+                            </article>
+                        </div>
+                    </div>
+
+                    <div class="tab-panel" id="tab-codebase" role="tabpanel" aria-labelledby="tab-btn-codebase">
+                        <div class="package-grid">
+                            <article class="package-card">
+                                <div class="kicker">API runtime</div>
+                                <h3><span class="mono">packages/core</span></h3>
+                                <p>Route handlers, auth, spaces, schema registry, content lifecycle, media handling, events, webhooks, cache helpers, and utilities.</p>
+                            </article>
+                            <article class="package-card">
+                                <div class="kicker">Async jobs</div>
+                                <h3><span class="mono">packages/worker</span></h3>
+                                <p>Jobs, queues, and runners that keep retryable background work out of the request path.</p>
+                            </article>
+                            <article class="package-card">
+                                <div class="kicker">Admin UI</div>
+                                <h3><span class="mono">packages/admin</span></h3>
+                                <p>App router, components, feature modules, and client helpers for the editorial interface.</p>
+                            </article>
+                        </div>
+
+                        <div class="split-grid">
+                            <article class="tree-card">
+                                <div class="kicker">Monorepo shape</div>
+                                <h3>Top-level project layout</h3>
+<pre class="mono">htmless/
+├── <strong>docs/</strong>
+├── <strong>packages/core/</strong>
+├── <strong>packages/worker/</strong>
+├── <strong>packages/admin/</strong>
+├── <strong>docker-compose.yml</strong>
+├── <strong>Dockerfile.api</strong>
+├── <strong>Dockerfile.admin</strong>
+├── <strong>Dockerfile.worker</strong>
+├── <strong>package.json</strong>
+└── <strong>pnpm-workspace.yaml</strong></pre>
+                            </article>
+                            <article class="tree-card">
+                                <div class="kicker">Core package</div>
+                                <h3>Important source folders</h3>
+<pre class="mono">src/
+├── <strong>api/</strong> cma/, cda/, preview/
+├── <strong>auth/</strong> login, tokens, middleware
+├── <strong>spaces/</strong> tenant scoping
+├── <strong>schema/</strong> type registry, validation
+├── <strong>content/</strong> CRUD, versions, publish flow
+├── <strong>media/</strong> uploads and metadata
+├── <strong>events/</strong> internal emitters
+├── <strong>webhooks/</strong> signing and dispatch policy
+└── <strong>cache/</strong> keys and invalidation</pre>
+                            </article>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" id="flows">
+            <div class="container">
+                <div class="section-header">
+                    <div>
+                        <p class="section-label">Flows</p>
+                        <h2 class="section-title">Slides for the parts that matter most</h2>
+                        <p class="section-desc">These horizontal flows turn the architecture doc into scan-friendly steps for editors, developers, and anyone trying to understand how the system actually behaves.</p>
+                    </div>
+                </div>
+
+                <div class="slider-block">
+                    <div class="slider-head">
+                        <div>
+                            <h3>Publish path</h3>
+                            <p>How content moves from the editor-facing surface toward published delivery and async side effects.</p>
+                        </div>
+                        <div class="slider-controls">
+                            <button class="slider-btn" type="button" data-slider-prev="publish-flow" aria-label="Previous publish step">&#8592;</button>
+                            <button class="slider-btn" type="button" data-slider-next="publish-flow" aria-label="Next publish step">&#8594;</button>
+                        </div>
+                    </div>
+                    <div class="slider-track" id="publish-flow">
+                        <article class="flow-card">
+                            <div class="flow-index">1</div>
+                            <h4>Editor UI</h4>
+                            <p>Editors work from the admin app and authenticate with a bearer user token.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">2</div>
+                            <h4>CMA</h4>
+                            <p>The content management API handles schema work, drafts, versions, and publish actions.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">3</div>
+                            <h4>Content store</h4>
+                            <p>Entries, immutable versions, and draft/published pointers are updated in PostgreSQL.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">4</div>
+                            <h4>Preview and CDA</h4>
+                            <p>Preview can read draft state while CDA stays published-only and cacheable.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">5</div>
+                            <h4>Worker and webhooks</h4>
+                            <p>Publish events feed the async pipeline for signed webhook delivery and retries.</p>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="slider-block">
+                    <div class="slider-head">
+                        <div>
+                            <h3>Database domains</h3>
+                            <p>The PostgreSQL model is easier to understand when grouped by responsibility instead of as a raw table list.</p>
+                        </div>
+                        <div class="slider-controls">
+                            <button class="slider-btn" type="button" data-slider-prev="db-domains" aria-label="Previous domain">&#8592;</button>
+                            <button class="slider-btn" type="button" data-slider-next="db-domains" aria-label="Next domain">&#8594;</button>
+                        </div>
+                    </div>
+                    <div class="slider-track" id="db-domains">
+                        <article class="flow-card">
+                            <div class="flow-index">A</div>
+                            <h4>Spaces + users</h4>
+                            <p>Tenant boundary, identity, roles, and membership mappings.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">B</div>
+                            <h4>Schema registry</h4>
+                            <p>Content types and field definitions per space.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">C</div>
+                            <h4>Entry lifecycle</h4>
+                            <p>Stable entries, immutable versions, and state pointers for draft and published content.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">D</div>
+                            <h4>Assets</h4>
+                            <p>Media metadata and usage tracking tied back to content.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">E</div>
+                            <h4>Events + audit</h4>
+                            <p>Webhook config, delivery attempts, and the audit trail for sensitive changes.</p>
+                        </article>
+                    </div>
+                </div>
+
+                <div class="slider-block">
+                    <div class="slider-head">
+                        <div>
+                            <h3>Deployment path</h3>
+                            <p>A compact version of the system topology from the source document.</p>
+                        </div>
+                        <div class="slider-controls">
+                            <button class="slider-btn" type="button" data-slider-prev="deploy-flow" aria-label="Previous deployment step">&#8592;</button>
+                            <button class="slider-btn" type="button" data-slider-next="deploy-flow" aria-label="Next deployment step">&#8594;</button>
+                        </div>
+                    </div>
+                    <div class="slider-track" id="deploy-flow">
+                        <article class="flow-card">
+                            <div class="flow-index">1</div>
+                            <h4>Internet</h4>
+                            <p>Traffic enters through the public edge.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">2</div>
+                            <h4>Traefik</h4>
+                            <p>Routing and SSL termination decide where requests go next.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">3</div>
+                            <h4>Admin + API</h4>
+                            <p>The Next.js admin and Node.js API run as separate services.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">4</div>
+                            <h4>Worker</h4>
+                            <p>Background jobs and webhook retries stay off the request path.</p>
+                        </article>
+                        <article class="flow-card">
+                            <div class="flow-index">5</div>
+                            <h4>PostgreSQL + Redis</h4>
+                            <p>Persistent relational data on one side, transient cache and queue state on the other.</p>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <div class="container">
+                <div class="section-header">
+                    <div>
+                        <p class="section-label">Notes</p>
+                        <h2 class="section-title">Architecture principles worth remembering</h2>
+                    </div>
+                </div>
+                <div class="note-grid">
+                    <article class="note-card">
+                        <h3>PostgreSQL is the source of truth</h3>
+                        <p>The architecture is intentionally SQL-first even as Phase 9 pushes delivery closer to document-style speed.</p>
+                    </article>
+                    <article class="note-card">
+                        <h3>The APIs are product boundaries</h3>
+                        <p>CMA, CDA, and Preview are not just technical routes. They represent different behaviors, trust levels, and cacheability rules.</p>
+                    </article>
+                    <article class="note-card">
+                        <h3>Worker isolation matters</h3>
+                        <p>Webhooks and retries belong in the async layer so API responsiveness is not tied to downstream services.</p>
+                    </article>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="footer-inner">
+            <p class="footer-copy">Architecture source: <span class="mono">docs/ARCHITECTURE.md</span>. Styled for the website so technical and non-technical collaborators can scan it faster.</p>
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/architecture/">Architecture</a>
+                <a href="/roadmap/">Roadmap</a>
+                <a href="/pricing/">Pricing</a>
+                <a href="https://github.com/HTMLess-CMS/HTMLess" target="_blank" rel="noopener">GitHub</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        (function () {
+            var tabButtons = Array.prototype.slice.call(document.querySelectorAll('[data-tab-target]'));
+            var tabPanels = Array.prototype.slice.call(document.querySelectorAll('.tab-panel'));
+
+            tabButtons.forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var targetId = button.getAttribute('data-tab-target');
+
+                    tabButtons.forEach(function (btn) {
+                        btn.classList.remove('active');
+                        btn.setAttribute('aria-selected', 'false');
+                    });
+                    tabPanels.forEach(function (panel) {
+                        panel.classList.remove('active');
+                    });
+
+                    button.classList.add('active');
+                    button.setAttribute('aria-selected', 'true');
+                    var activePanel = document.getElementById(targetId);
+                    if (activePanel) {
+                        activePanel.classList.add('active');
+                    }
+                });
+            });
+
+            function scrollSlider(trackId, direction) {
+                var track = document.getElementById(trackId);
+                if (!track) return;
+                var amount = Math.max(track.clientWidth * 0.82, 260);
+                track.scrollBy({ left: amount * direction, behavior: 'smooth' });
+            }
+
+            document.querySelectorAll('[data-slider-prev]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    scrollSlider(button.getAttribute('data-slider-prev'), -1);
+                });
+            });
+
+            document.querySelectorAll('[data-slider-next]').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    scrollSlider(button.getAttribute('data-slider-next'), 1);
+                });
+            });
+        }());
+    </script>
+</body>
+</html>

@@ -72,6 +72,38 @@ const smallBtnStyle: React.CSSProperties = {
   lineHeight: 1,
 };
 
+// ── Block type icons and colors ──
+
+const blockIconMap: Record<string, string> = {
+  paragraph: '\u00B6',    // pilcrow
+  heading: 'H',
+  image: '\u25A3',        // square with pattern
+  callout: '\u26A0',      // warning sign
+  embed: '\u29C9',        // link
+  list: '\u2630',         // trigram
+  code: '</>',
+};
+
+const blockColorMap: Record<string, string> = {
+  paragraph: '#a1a1aa',
+  heading: '#3b82f6',
+  image: '#22c55e',
+  callout: '#f59e0b',
+  embed: '#06b6d4',
+  list: '#8b5cf6',
+  code: '#ec4899',
+};
+
+const blockCategoryMap: Record<string, string> = {
+  paragraph: 'Text',
+  heading: 'Text',
+  list: 'Text',
+  code: 'Text',
+  image: 'Media',
+  embed: 'Media',
+  callout: 'Layout',
+};
+
 function defaultAttrsForType(typeKey: string): Record<string, unknown> {
   switch (typeKey) {
     case 'paragraph': return { text: '' };
@@ -89,6 +121,13 @@ export default function BlocksEditor({ blocks, onChange, spaceId }: BlocksEditor
   const [definitions, setDefinitions] = useState<BlockDefinition[]>([]);
   const [loadingDefs, setLoadingDefs] = useState(true);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+
+  // Collapse/expand state
+  const [collapsedBlocks, setCollapsedBlocks] = useState<Set<number>>(new Set());
+
+  // Drag and drop
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const loadDefinitions = useCallback(async () => {
     setLoadingDefs(true);
@@ -131,11 +170,27 @@ export default function BlocksEditor({ blocks, onChange, spaceId }: BlocksEditor
     if (target < 0 || target >= blocks.length) return;
     const next = [...blocks];
     [next[index], next[target]] = [next[target], next[index]];
+
+    // Update collapsed set with new indices
+    const newCollapsed = new Set<number>();
+    for (const idx of collapsedBlocks) {
+      if (idx === index) newCollapsed.add(target);
+      else if (idx === target) newCollapsed.add(index);
+      else newCollapsed.add(idx);
+    }
+    setCollapsedBlocks(newCollapsed);
     onChange(next);
   }
 
   function deleteBlock(index: number) {
     const next = blocks.filter((_, i) => i !== index);
+    // Update collapsed set
+    const newCollapsed = new Set<number>();
+    for (const idx of collapsedBlocks) {
+      if (idx < index) newCollapsed.add(idx);
+      else if (idx > index) newCollapsed.add(idx - 1);
+    }
+    setCollapsedBlocks(newCollapsed);
     onChange(next);
   }
 
@@ -148,9 +203,117 @@ export default function BlocksEditor({ blocks, onChange, spaceId }: BlocksEditor
     setShowAddDropdown(false);
   }
 
+  function toggleCollapse(index: number) {
+    const next = new Set(collapsedBlocks);
+    if (next.has(index)) {
+      next.delete(index);
+    } else {
+      next.add(index);
+    }
+    setCollapsedBlocks(next);
+  }
+
   function getDefTitle(typeKey: string): string {
     const def = definitions.find((d) => d.key === typeKey);
     return def?.title ?? typeKey;
+  }
+
+  // ── Drag and drop handlers ──
+
+  function handleDragStart(index: number) {
+    setDragIndex(index);
+  }
+
+  function handleDragOver(e: React.DragEvent, index: number) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  }
+
+  function handleDragLeave() {
+    setDragOverIndex(null);
+  }
+
+  function handleDrop(e: React.DragEvent, targetIndex: number) {
+    e.preventDefault();
+    if (dragIndex === null || dragIndex === targetIndex) {
+      setDragIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const next = [...blocks];
+    const [moved] = next.splice(dragIndex, 1);
+    next.splice(targetIndex, 0, moved);
+
+    // Update collapsed set with new indices
+    const newCollapsed = new Set<number>();
+    for (const idx of collapsedBlocks) {
+      if (idx === dragIndex) {
+        newCollapsed.add(targetIndex);
+      } else {
+        let newIdx = idx;
+        if (dragIndex < targetIndex) {
+          // Moved down: items between shift up
+          if (idx > dragIndex && idx <= targetIndex) newIdx = idx - 1;
+        } else {
+          // Moved up: items between shift down
+          if (idx >= targetIndex && idx < dragIndex) newIdx = idx + 1;
+        }
+        newCollapsed.add(newIdx);
+      }
+    }
+    setCollapsedBlocks(newCollapsed);
+    setDragIndex(null);
+    setDragOverIndex(null);
+    onChange(next);
+  }
+
+  function handleDragEnd() {
+    setDragIndex(null);
+    setDragOverIndex(null);
+  }
+
+  // ── Get a short summary for collapsed blocks ──
+
+  function getBlockSummary(block: BlockInstance): string {
+    const attrs = block.attrs;
+    switch (block.typeKey) {
+      case 'paragraph':
+        return truncate(String(attrs.text ?? ''), 60) || '(empty)';
+      case 'heading':
+        return `H${attrs.level ?? 2}: ${truncate(String(attrs.text ?? ''), 50) || '(empty)'}`;
+      case 'image':
+        return attrs.alt ? truncate(String(attrs.alt), 50) : (attrs.assetId ? String(attrs.assetId) : '(no image)');
+      case 'callout':
+        return `${String(attrs.tone ?? 'info').toUpperCase()}: ${truncate(String(attrs.title ?? ''), 40) || '(empty)'}`;
+      case 'embed':
+        return truncate(String(attrs.url ?? ''), 60) || '(no URL)';
+      case 'list': {
+        const items = Array.isArray(attrs.items) ? attrs.items as string[] : [];
+        return `${items.length} item${items.length !== 1 ? 's' : ''}`;
+      }
+      case 'code':
+        return attrs.language ? `${attrs.language}` : '(code)';
+      default:
+        return block.typeKey;
+    }
+  }
+
+  function truncate(s: string, max: number): string {
+    return s.length > max ? s.slice(0, max) + '...' : s;
+  }
+
+  // ── Categorized definitions for dropdown ──
+
+  function getCategorizedDefinitions(): Record<string, BlockDefinition[]> {
+    const cats: Record<string, BlockDefinition[]> = {};
+    for (const def of definitions) {
+      const cat = blockCategoryMap[def.key] ?? 'Other';
+      if (!cats[cat]) cats[cat] = [];
+      cats[cat].push(def);
+    }
+    return cats;
   }
 
   function renderBlockEditor(block: BlockInstance, index: number) {
@@ -402,12 +565,14 @@ export default function BlocksEditor({ blocks, onChange, spaceId }: BlocksEditor
     if (block.typeKey === 'callout') {
       return toneColors[String(block.attrs.tone)] ?? 'var(--border)';
     }
-    return 'var(--border)';
+    return blockColorMap[block.typeKey] ?? 'var(--border)';
   }
 
   if (loadingDefs) {
     return <p style={{ color: 'var(--text-dim)', fontSize: '0.8rem', padding: '0.5rem 0' }}>Loading block definitions...</p>;
   }
+
+  const categorized = getCategorizedDefinitions();
 
   return (
     <div>
@@ -418,75 +583,163 @@ export default function BlocksEditor({ blocks, onChange, spaceId }: BlocksEditor
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        {blocks.map((block, index) => (
-          <div
-            key={index}
-            style={{
-              background: 'var(--bg)',
-              border: '1px solid var(--border)',
-              borderLeft: `3px solid ${blockAccentColor(block)}`,
-              borderRadius: '8px',
-              padding: '1rem',
-            }}
-          >
-            {/* Block header */}
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '0.75rem',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span style={{
-                  fontSize: '0.7rem',
-                  fontWeight: 600,
-                  color: 'var(--accent-light)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.04em',
-                }}>
-                  {getDefTitle(block.typeKey)}
-                </span>
-                <span style={{
-                  fontSize: '0.65rem',
-                  color: 'var(--text-dim)',
-                  background: 'var(--bg-elevated)',
-                  padding: '0.1rem 0.35rem',
-                  borderRadius: '3px',
-                }}>
-                  #{index + 1}
-                </span>
-              </div>
-              <div style={{ display: 'flex', gap: '0.25rem' }}>
-                <button
-                  onClick={() => moveBlock(index, -1)}
-                  disabled={index === 0}
-                  style={{ ...smallBtnStyle, opacity: index === 0 ? 0.3 : 1 }}
-                  title="Move up"
-                >
-                  ↑
-                </button>
-                <button
-                  onClick={() => moveBlock(index, 1)}
-                  disabled={index === blocks.length - 1}
-                  style={{ ...smallBtnStyle, opacity: index === blocks.length - 1 ? 0.3 : 1 }}
-                  title="Move down"
-                >
-                  ↓
-                </button>
-                <button
-                  onClick={() => deleteBlock(index)}
-                  style={{ ...smallBtnStyle, color: 'var(--red)', borderColor: 'rgba(239,68,68,0.3)' }}
-                  title="Delete block"
-                >
-                  x
-                </button>
-              </div>
-            </div>
+        {blocks.map((block, index) => {
+          const isCollapsed = collapsedBlocks.has(index);
+          const isDragging = dragIndex === index;
+          const isDragOver = dragOverIndex === index;
+          const color = blockColorMap[block.typeKey] ?? '#6366f1';
 
-            {/* Block-specific editor */}
-            {renderBlockEditor(block, index)}
-          </div>
-        ))}
+          return (
+            <div
+              key={index}
+              draggable
+              onDragStart={() => handleDragStart(index)}
+              onDragOver={(e) => handleDragOver(e, index)}
+              onDragLeave={handleDragLeave}
+              onDrop={(e) => handleDrop(e, index)}
+              onDragEnd={handleDragEnd}
+              style={{
+                background: isDragOver ? 'color-mix(in srgb, var(--accent) 6%, var(--bg))' : 'var(--bg)',
+                border: isDragOver ? '1px solid var(--accent)' : '1px solid var(--border)',
+                borderLeft: `3px solid ${blockAccentColor(block)}`,
+                borderRadius: '8px',
+                padding: isCollapsed ? '0' : '1rem',
+                opacity: isDragging ? 0.5 : 1,
+                transition: 'border-color 0.15s, background 0.15s, opacity 0.15s',
+              }}
+            >
+              {/* Block header */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: isCollapsed ? '0.6rem 1rem' : '0',
+                marginBottom: isCollapsed ? '0' : '0.75rem',
+                cursor: 'grab',
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, minWidth: 0 }}>
+                  {/* Drag handle */}
+                  <span style={{
+                    color: 'var(--text-dim)',
+                    fontSize: '0.75rem',
+                    cursor: 'grab',
+                    userSelect: 'none',
+                    flexShrink: 0,
+                  }}>
+                    &#x2630;
+                  </span>
+
+                  {/* Block type icon badge */}
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 700,
+                    width: '22px',
+                    height: '22px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: '4px',
+                    background: `color-mix(in srgb, ${color} 18%, transparent)`,
+                    color: color,
+                    flexShrink: 0,
+                    lineHeight: 1,
+                  }}>
+                    {blockIconMap[block.typeKey] ?? '?'}
+                  </span>
+
+                  <span style={{
+                    fontSize: '0.7rem',
+                    fontWeight: 600,
+                    color: color,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    flexShrink: 0,
+                  }}>
+                    {getDefTitle(block.typeKey)}
+                  </span>
+                  <span style={{
+                    fontSize: '0.65rem',
+                    color: 'var(--text-dim)',
+                    background: 'var(--bg-elevated)',
+                    padding: '0.1rem 0.35rem',
+                    borderRadius: '3px',
+                    flexShrink: 0,
+                  }}>
+                    #{index + 1}
+                  </span>
+
+                  {/* Collapsed summary */}
+                  {isCollapsed && (
+                    <span style={{
+                      fontSize: '0.75rem',
+                      color: 'var(--text-dim)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      minWidth: 0,
+                      fontStyle: 'italic',
+                    }}>
+                      {getBlockSummary(block)}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display: 'flex', gap: '0.25rem', flexShrink: 0 }}>
+                  {/* Collapse/expand toggle */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleCollapse(index);
+                    }}
+                    style={{
+                      ...smallBtnStyle,
+                      fontSize: '0.65rem',
+                      padding: '0.2rem 0.4rem',
+                      color: 'var(--text-muted)',
+                    }}
+                    title={isCollapsed ? 'Expand' : 'Collapse'}
+                  >
+                    {isCollapsed ? '\u25BC' : '\u25B2'}
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveBlock(index, -1);
+                    }}
+                    disabled={index === 0}
+                    style={{ ...smallBtnStyle, opacity: index === 0 ? 0.3 : 1 }}
+                    title="Move up"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      moveBlock(index, 1);
+                    }}
+                    disabled={index === blocks.length - 1}
+                    style={{ ...smallBtnStyle, opacity: index === blocks.length - 1 ? 0.3 : 1 }}
+                    title="Move down"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteBlock(index);
+                    }}
+                    style={{ ...smallBtnStyle, color: 'var(--red)', borderColor: 'rgba(239,68,68,0.3)' }}
+                    title="Delete block"
+                  >
+                    x
+                  </button>
+                </div>
+              </div>
+
+              {/* Block-specific editor (hidden when collapsed) */}
+              {!isCollapsed && renderBlockEditor(block, index)}
+            </div>
+          );
+        })}
       </div>
 
       {/* Add Block button */}
@@ -533,39 +786,77 @@ export default function BlocksEditor({ blocks, onChange, spaceId }: BlocksEditor
               background: 'var(--bg-elevated)',
               border: '1px solid var(--border)',
               borderRadius: '8px',
-              padding: '0.35rem',
+              padding: '0.5rem',
               zIndex: 100,
-              maxHeight: '300px',
+              maxHeight: '360px',
               overflowY: 'auto',
               boxShadow: '0 -4px 24px rgba(0,0,0,0.3)',
             }}>
-              {definitions.map((def) => (
-                <button
-                  key={def.key}
-                  onClick={() => addBlock(def.key)}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    textAlign: 'left',
-                    padding: '0.5rem 0.75rem',
-                    background: 'transparent',
-                    border: 'none',
-                    borderRadius: '6px',
-                    color: 'var(--text)',
-                    fontSize: '0.8rem',
-                    cursor: 'pointer',
-                    transition: 'background 0.1s',
-                  }}
-                  onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-surface)')}
-                  onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <span style={{ fontWeight: 500 }}>{def.title}</span>
-                  {def.description && (
-                    <span style={{ color: 'var(--text-dim)', fontSize: '0.75rem', marginLeft: '0.5rem' }}>
-                      {def.description}
-                    </span>
-                  )}
-                </button>
+              {Object.entries(categorized).map(([category, defs]) => (
+                <div key={category} style={{ marginBottom: '0.25rem' }}>
+                  <div style={{
+                    fontSize: '0.6rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    color: 'var(--text-dim)',
+                    padding: '0.4rem 0.75rem 0.2rem',
+                    userSelect: 'none',
+                  }}>
+                    {category}
+                  </div>
+                  {defs.map((def) => {
+                    const defColor = blockColorMap[def.key] ?? '#6366f1';
+                    const defIcon = blockIconMap[def.key] ?? '?';
+                    return (
+                      <button
+                        key={def.key}
+                        onClick={() => addBlock(def.key)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.6rem',
+                          width: '100%',
+                          textAlign: 'left',
+                          padding: '0.45rem 0.75rem',
+                          background: 'transparent',
+                          border: 'none',
+                          borderRadius: '6px',
+                          color: 'var(--text)',
+                          fontSize: '0.8rem',
+                          cursor: 'pointer',
+                          transition: 'background 0.1s',
+                        }}
+                        onMouseOver={(e) => (e.currentTarget.style.background = 'var(--bg-surface)')}
+                        onMouseOut={(e) => (e.currentTarget.style.background = 'transparent')}
+                      >
+                        <span style={{
+                          fontSize: '0.68rem',
+                          fontWeight: 700,
+                          width: '22px',
+                          height: '22px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          borderRadius: '4px',
+                          background: `color-mix(in srgb, ${defColor} 18%, transparent)`,
+                          color: defColor,
+                          flexShrink: 0,
+                        }}>
+                          {defIcon}
+                        </span>
+                        <div>
+                          <span style={{ fontWeight: 500 }}>{def.title}</span>
+                          {def.description && (
+                            <span style={{ color: 'var(--text-dim)', fontSize: '0.72rem', marginLeft: '0.5rem' }}>
+                              {def.description}
+                            </span>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               ))}
             </div>
           </>
