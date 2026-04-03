@@ -10,7 +10,7 @@ const router = Router();
 
 // Auth routes — /login is public, token creation routes require auth
 // (auth.ts applies authenticate() selectively on its own routes)
-router.use('/', authRouter);
+router.use('/auth', authRouter);
 
 // Everything below requires authentication
 router.use(authenticate());
