@@ -430,7 +430,7 @@ export default function GuidePage() {
               <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)', marginBottom: '0.75rem' }}>
                 Choose a template to apply:
               </div>
-              <TemplatesPanel onApplied={loadState} />
+              <TemplatesPanel onApplied={() => { loadState(); setExpandedStep(2); }} />
             </div>
           )}
         </StepCard>
