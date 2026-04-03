@@ -39,6 +39,6 @@
   "author": "HTMLess <hello@htmless.com>",
   "license": "MIT",
   "devDependencies": {
-    "typescript": "^5.8.3"
+    "typescript": "^5.9.3"
   }
 }
