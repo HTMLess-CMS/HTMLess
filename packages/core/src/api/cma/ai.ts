@@ -485,47 +485,103 @@ router.post(
           return;
         }
 
+        // 1. Create all content types + fields
         const ids = await materializeSchema(
           spaceId,
           analysis.suggestedSchema,
           req.auth!.userId,
         );
 
-        // Create a draft entry with the blocks embedded as data
-        const primaryType = analysis.suggestedSchema.contentTypes[0];
-        let entryId: string | null = null;
+        // 2. Create sample entries for each content type
+        const entries = analysis.sampleEntries;
+        const createdEntries: Record<string, { created: string[]; skipped: number }> = {};
 
-        if (primaryType) {
-          const slug = `${primaryType.key}-${Date.now()}`;
-          const entryData: Record<string, unknown> = {
-            title: primaryType.name,
-            slug,
-            blocks: analysis.suggestedBlocks,
-          };
+        // Homepage entry
+        try {
+          createdEntries.homepage = await createEntries(
+            spaceId,
+            'homepage',
+            [entries.homepage],
+            req.auth!.userId,
+          );
+        } catch {
+          createdEntries.homepage = { created: [], skipped: 0 };
+        }
 
-          // Populate hero fields if they exist in the schema
-          if (analysis.sections.some((s) => s.type === 'hero')) {
-            entryData.heroTitle = 'Your Hero Headline';
-            entryData.heroSubtitle = 'A compelling subtitle';
-          }
-
+        // Service entries
+        if (entries.services.length > 0) {
           try {
-            const result = await createEntries(
+            createdEntries.services = await createEntries(
               spaceId,
-              primaryType.key,
-              [entryData],
+              'service',
+              entries.services,
               req.auth!.userId,
             );
-            entryId = result.created[0] ?? null;
           } catch {
-            // Non-critical — still return the analysis
+            createdEntries.services = { created: [], skipped: 0 };
+          }
+        }
+
+        // Gallery item entries
+        if (entries.galleryItems.length > 0) {
+          try {
+            createdEntries.galleryItems = await createEntries(
+              spaceId,
+              'gallery-item',
+              entries.galleryItems,
+              req.auth!.userId,
+            );
+          } catch {
+            createdEntries.galleryItems = { created: [], skipped: 0 };
+          }
+        }
+
+        // Testimonial entries
+        if (entries.testimonials.length > 0) {
+          try {
+            createdEntries.testimonials = await createEntries(
+              spaceId,
+              'testimonial',
+              entries.testimonials,
+              req.auth!.userId,
+            );
+          } catch {
+            createdEntries.testimonials = { created: [], skipped: 0 };
+          }
+        }
+
+        // Team member entries
+        if (entries.teamMembers.length > 0) {
+          try {
+            createdEntries.teamMembers = await createEntries(
+              spaceId,
+              'team-member',
+              entries.teamMembers,
+              req.auth!.userId,
+            );
+          } catch {
+            createdEntries.teamMembers = { created: [], skipped: 0 };
+          }
+        }
+
+        // FAQ entries
+        if (entries.faqs.length > 0) {
+          try {
+            createdEntries.faqs = await createEntries(
+              spaceId,
+              'faq',
+              entries.faqs,
+              req.auth!.userId,
+            );
+          } catch {
+            createdEntries.faqs = { created: [], skipped: 0 };
           }
         }
 
         res.status(201).json({
           ...analysis,
           created: ids,
-          entryId,
+          createdEntries,
         });
         return;
       }

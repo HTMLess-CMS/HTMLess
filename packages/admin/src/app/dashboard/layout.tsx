@@ -8,6 +8,7 @@ import { getWhiteLabelConfig } from '../../lib/white-label';
 
 const NAV_ITEMS = [
   { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Create from Layout', href: '/dashboard/create-from-layout' },
   { label: 'Content', href: '/dashboard/content' },
   { label: 'Schema', href: '/dashboard/schema' },
   { label: 'Blocks', href: '/dashboard/blocks' },

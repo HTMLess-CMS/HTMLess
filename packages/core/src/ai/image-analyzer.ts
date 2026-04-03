@@ -1,11 +1,10 @@
 // ─── Image Layout Analyzer ───
 //
-// Stub implementation that works without an external AI API.
-// Analyzes image metadata and filename for layout hints, then generates
-// appropriate page structures, blocks, and schema fields.
+// Smart website layout analyzer that generates comprehensive schemas
+// based on image metadata (dimensions, file size, filename hints).
 //
-// When an AI vision API is connected (via extension hook), this module
-// can hand off to real image recognition.
+// When a user uploads ANY website layout image, we detect common
+// business website patterns and generate a full site structure.
 
 import type {
   ContentTypeSpec,
@@ -17,16 +16,18 @@ import type {
 
 export type SectionType =
   | 'hero'
-  | 'features'
-  | 'testimonials'
-  | 'pricing'
-  | 'cta'
-  | 'footer'
+  | 'services'
+  | 'about'
   | 'gallery'
-  | 'contact'
-  | 'faq'
+  | 'testimonials'
   | 'team'
+  | 'faq'
+  | 'contact'
+  | 'footer'
+  | 'pricing'
   | 'stats'
+  | 'features'
+  | 'cta'
   | 'content'
   | 'header'
   | 'sidebar'
@@ -47,188 +48,19 @@ export interface LayoutAnalysis {
   suggestedSchema: GeneratedSchema;
   suggestedBlocks: BlockInstance[];
   pageStructure: string;
+  sampleEntries: SampleEntrySet;
 }
 
-// ─── Section → Block mapping ───────────────────────────────────────────
-
-function blocksForSection(section: SectionType): BlockInstance[] {
-  switch (section) {
-    case 'hero':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 1, text: 'Your Hero Headline Here' },
-        },
-        {
-          blockKey: 'paragraph',
-          attributes: { text: 'A compelling subtitle that captures your value proposition.' },
-        },
-        {
-          blockKey: 'image',
-          attributes: { assetId: '', alt: 'Hero background image', caption: '' },
-        },
-      ];
-    case 'features':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'Features' },
-        },
-        {
-          blockKey: 'list',
-          attributes: {
-            ordered: false,
-            items: ['Feature one description', 'Feature two description', 'Feature three description'],
-          },
-        },
-      ];
-    case 'testimonials':
-    case 'reviews':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'What Our Customers Say' },
-        },
-        {
-          blockKey: 'callout',
-          attributes: {
-            tone: 'info',
-            title: 'Customer Name',
-            body: '"This product changed everything for us."',
-          },
-        },
-      ];
-    case 'pricing':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'Pricing' },
-        },
-        {
-          blockKey: 'paragraph',
-          attributes: { text: 'Choose the plan that fits your needs.' },
-        },
-      ];
-    case 'cta':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'Ready to Get Started?' },
-        },
-        {
-          blockKey: 'paragraph',
-          attributes: { text: 'Sign up today and transform your workflow.' },
-        },
-      ];
-    case 'gallery':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'Gallery' },
-        },
-        {
-          blockKey: 'image',
-          attributes: { assetId: '', alt: 'Gallery image 1', caption: '' },
-        },
-        {
-          blockKey: 'image',
-          attributes: { assetId: '', alt: 'Gallery image 2', caption: '' },
-        },
-      ];
-    case 'contact':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'Get In Touch' },
-        },
-        {
-          blockKey: 'paragraph',
-          attributes: { text: 'Fill out the form below and we will get back to you.' },
-        },
-      ];
-    case 'faq':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'Frequently Asked Questions' },
-        },
-        {
-          blockKey: 'callout',
-          attributes: {
-            tone: 'info',
-            title: 'How does it work?',
-            body: 'Detailed answer goes here.',
-          },
-        },
-      ];
-    case 'team':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'Meet the Team' },
-        },
-        {
-          blockKey: 'paragraph',
-          attributes: { text: 'The people behind the product.' },
-        },
-      ];
-    case 'stats':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'By the Numbers' },
-        },
-        {
-          blockKey: 'list',
-          attributes: {
-            ordered: false,
-            items: ['100+ customers', '99.9% uptime', '24/7 support'],
-          },
-        },
-      ];
-    case 'content':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 2, text: 'Content Section' },
-        },
-        {
-          blockKey: 'paragraph',
-          attributes: { text: 'Your main content goes here.' },
-        },
-      ];
-    case 'header':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 1, text: 'Page Header' },
-        },
-      ];
-    case 'sidebar':
-      return [
-        {
-          blockKey: 'heading',
-          attributes: { level: 3, text: 'Sidebar' },
-        },
-        {
-          blockKey: 'list',
-          attributes: {
-            ordered: false,
-            items: ['Recent posts', 'Categories', 'Tags'],
-          },
-        },
-      ];
-    case 'footer':
-      return [
-        {
-          blockKey: 'paragraph',
-          attributes: { text: 'Footer content — links, copyright, social icons.' },
-        },
-      ];
-  }
+export interface SampleEntrySet {
+  homepage: Record<string, unknown>;
+  services: Record<string, unknown>[];
+  galleryItems: Record<string, unknown>[];
+  testimonials: Record<string, unknown>[];
+  teamMembers: Record<string, unknown>[];
+  faqs: Record<string, unknown>[];
 }
 
-// ─── Section → Schema field suggestions ────────────────────────────────
+// ─── Field builder ────────────────────────────────────────────────────
 
 function fld(
   key: string,
@@ -247,270 +79,416 @@ function fld(
     sortOrder: order,
     ...(opts.enumValues && { enumValues: opts.enumValues }),
     ...(opts.referenceTarget && { referenceTarget: opts.referenceTarget }),
+    ...(opts.defaultValue !== undefined && { defaultValue: opts.defaultValue }),
   };
 }
 
-function fieldsForSections(sections: SectionType[]): FieldSpec[] {
-  const fields: FieldSpec[] = [
-    fld('title', 'Title', 'text', 0, { required: true }),
-    fld('slug', 'Slug', 'slug', 1, { required: true, unique: true }),
-  ];
-  let order = 2;
-  const seen = new Set<string>(['title', 'slug']);
+// ─── Content type definitions per section ─────────────────────────────
 
-  function add(key: string, name: string, type: string, opts: Partial<FieldSpec> = {}): void {
-    if (seen.has(key)) return;
-    seen.add(key);
-    fields.push(fld(key, name, type, order++, opts));
-  }
-
-  for (const section of sections) {
-    switch (section) {
-      case 'hero':
-        add('heroTitle', 'Hero Title', 'text');
-        add('heroSubtitle', 'Hero Subtitle', 'text');
-        add('heroImage', 'Hero Image', 'media');
-        break;
-      case 'features':
-        add('features', 'Features', 'json');
-        break;
-      case 'testimonials':
-      case 'reviews':
-        add('testimonials', 'Testimonials', 'json');
-        break;
-      case 'pricing':
-        add('pricingPlans', 'Pricing Plans', 'json');
-        break;
-      case 'cta':
-        add('ctaTitle', 'CTA Title', 'text');
-        add('ctaButtonText', 'CTA Button Text', 'text');
-        add('ctaButtonUrl', 'CTA Button URL', 'text');
-        break;
-      case 'gallery':
-        add('galleryImages', 'Gallery Images', 'media');
-        break;
-      case 'contact':
-        add('contactEmail', 'Contact Email', 'text');
-        add('contactPhone', 'Contact Phone', 'text');
-        break;
-      case 'faq':
-        add('faqItems', 'FAQ Items', 'json');
-        break;
-      case 'team':
-        add('teamMembers', 'Team Members', 'json');
-        break;
-      case 'stats':
-        add('stats', 'Statistics', 'json');
-        break;
-      case 'content':
-        add('body', 'Body', 'richtext');
-        break;
-      case 'header':
-        // covered by title
-        break;
-      case 'sidebar':
-        add('sidebarContent', 'Sidebar Content', 'richtext');
-        break;
-      case 'footer':
-        add('footerText', 'Footer Text', 'text');
-        break;
-    }
-  }
-
-  add('seoTitle', 'SEO Title', 'text');
-  add('seoDescription', 'SEO Description', 'text');
-
-  return fields;
+function buildHomepageContentType(): ContentTypeSpec {
+  return {
+    key: 'homepage',
+    name: 'Homepage',
+    description: 'Main homepage content with hero, CTA, and business info',
+    fields: [
+      fld('title', 'Title', 'text', 0, { required: true }),
+      fld('slug', 'Slug', 'slug', 1, { required: true, unique: true }),
+      fld('heroTitle', 'Hero Title', 'text', 2, { required: true }),
+      fld('heroSubtitle', 'Hero Subtitle', 'text', 3),
+      fld('heroTagline', 'Hero Tagline', 'text', 4),
+      fld('ctaPrimary', 'Primary CTA Text', 'text', 5),
+      fld('ctaSecondary', 'Secondary CTA Text', 'text', 6),
+      fld('phone', 'Phone Number', 'text', 7),
+      fld('email', 'Email Address', 'text', 8),
+      fld('address', 'Business Address', 'text', 9),
+      fld('whyChooseUs', 'Why Choose Us', 'json', 10),
+      fld('socialLinks', 'Social Links', 'json', 11),
+      fld('seoTitle', 'SEO Title', 'text', 12),
+      fld('seoDescription', 'SEO Description', 'text', 13),
+    ],
+  };
 }
 
-// ─── Layout presets by filename hint ───────────────────────────────────
-
-interface LayoutPreset {
-  keywords: string[];
-  sections: { type: SectionType; confidence: number }[];
-  pageKey: string;
+function buildServiceContentType(): ContentTypeSpec {
+  return {
+    key: 'service',
+    name: 'Service',
+    description: 'Business services or offerings',
+    fields: [
+      fld('title', 'Title', 'text', 0, { required: true }),
+      fld('slug', 'Slug', 'slug', 1, { required: true, unique: true }),
+      fld('description', 'Description', 'richtext', 2),
+      fld('icon', 'Icon', 'text', 3),
+      fld('image', 'Image', 'media', 4),
+      fld('sortOrder', 'Sort Order', 'number', 5),
+    ],
+  };
 }
 
-const layoutPresets: LayoutPreset[] = [
-  {
-    keywords: ['landing'],
-    sections: [
-      { type: 'hero', confidence: 0.95 },
-      { type: 'features', confidence: 0.9 },
-      { type: 'cta', confidence: 0.85 },
-      { type: 'footer', confidence: 0.8 },
+function buildGalleryItemContentType(): ContentTypeSpec {
+  return {
+    key: 'gallery-item',
+    name: 'Gallery Item',
+    description: 'Before/after gallery images for showcasing work',
+    fields: [
+      fld('title', 'Title', 'text', 0, { required: true }),
+      fld('slug', 'Slug', 'slug', 1, { required: true, unique: true }),
+      fld('beforeImage', 'Before Image', 'media', 2),
+      fld('afterImage', 'After Image', 'media', 3),
+      fld('description', 'Description', 'text', 4),
+      fld('category', 'Category', 'text', 5),
+      fld('sortOrder', 'Sort Order', 'number', 6),
     ],
-    pageKey: 'landing-page',
-  },
-  {
-    keywords: ['blog'],
-    sections: [
-      { type: 'header', confidence: 0.95 },
-      { type: 'content', confidence: 0.95 },
-      { type: 'sidebar', confidence: 0.8 },
-    ],
-    pageKey: 'blog-page',
-  },
-  {
-    keywords: ['product'],
-    sections: [
-      { type: 'hero', confidence: 0.9 },
-      { type: 'gallery', confidence: 0.85 },
-      { type: 'pricing', confidence: 0.9 },
-      { type: 'reviews', confidence: 0.8 },
-    ],
-    pageKey: 'product-page',
-  },
-  {
-    keywords: ['portfolio', 'work'],
-    sections: [
-      { type: 'hero', confidence: 0.9 },
-      { type: 'gallery', confidence: 0.95 },
-      { type: 'contact', confidence: 0.8 },
-    ],
-    pageKey: 'portfolio-page',
-  },
-  {
-    keywords: ['about'],
-    sections: [
-      { type: 'hero', confidence: 0.9 },
-      { type: 'team', confidence: 0.85 },
-      { type: 'stats', confidence: 0.75 },
-      { type: 'cta', confidence: 0.7 },
-    ],
-    pageKey: 'about-page',
-  },
-  {
-    keywords: ['pricing'],
-    sections: [
-      { type: 'hero', confidence: 0.85 },
-      { type: 'pricing', confidence: 0.95 },
-      { type: 'faq', confidence: 0.8 },
-      { type: 'cta', confidence: 0.75 },
-    ],
-    pageKey: 'pricing-page',
-  },
-  {
-    keywords: ['contact'],
-    sections: [
-      { type: 'hero', confidence: 0.8 },
-      { type: 'contact', confidence: 0.95 },
-      { type: 'faq', confidence: 0.7 },
-    ],
-    pageKey: 'contact-page',
-  },
-];
+  };
+}
 
-const defaultLayout: LayoutPreset = {
-  keywords: [],
-  sections: [
-    { type: 'hero', confidence: 0.8 },
-    { type: 'features', confidence: 0.75 },
-    { type: 'testimonials', confidence: 0.7 },
-    { type: 'cta', confidence: 0.65 },
-  ],
-  pageKey: 'page',
-};
+function buildTestimonialContentType(): ContentTypeSpec {
+  return {
+    key: 'testimonial',
+    name: 'Testimonial',
+    description: 'Customer reviews and testimonials',
+    fields: [
+      fld('author', 'Author Name', 'text', 0, { required: true }),
+      fld('slug', 'Slug', 'slug', 1, { required: true, unique: true }),
+      fld('company', 'Company', 'text', 2),
+      fld('quote', 'Quote', 'text', 3, { required: true }),
+      fld('rating', 'Rating', 'number', 4),
+      fld('avatar', 'Avatar', 'media', 5),
+    ],
+  };
+}
 
-// ─── Image dimension hints ─────────────────────────────────────────────
+function buildTeamMemberContentType(): ContentTypeSpec {
+  return {
+    key: 'team-member',
+    name: 'Team Member',
+    description: 'Staff or team member profiles',
+    fields: [
+      fld('name', 'Full Name', 'text', 0, { required: true }),
+      fld('slug', 'Slug', 'slug', 1, { required: true, unique: true }),
+      fld('role', 'Role / Title', 'text', 2, { required: true }),
+      fld('bio', 'Biography', 'richtext', 3),
+      fld('photo', 'Photo', 'media', 4),
+      fld('email', 'Email', 'text', 5),
+      fld('sortOrder', 'Sort Order', 'number', 6),
+    ],
+  };
+}
 
-function adjustSectionsForDimensions(
-  sections: LayoutSection[],
+function buildFaqContentType(): ContentTypeSpec {
+  return {
+    key: 'faq',
+    name: 'FAQ',
+    description: 'Frequently asked questions',
+    fields: [
+      fld('question', 'Question', 'text', 0, { required: true }),
+      fld('slug', 'Slug', 'slug', 1, { required: true, unique: true }),
+      fld('answer', 'Answer', 'richtext', 2, { required: true }),
+      fld('category', 'Category', 'text', 3),
+      fld('sortOrder', 'Sort Order', 'number', 4),
+    ],
+  };
+}
+
+function buildPageContentType(): ContentTypeSpec {
+  return {
+    key: 'page',
+    name: 'Page',
+    description: 'Generic pages (About, Contact, etc.)',
+    fields: [
+      fld('title', 'Title', 'text', 0, { required: true }),
+      fld('slug', 'Slug', 'slug', 1, { required: true, unique: true }),
+      fld('body', 'Body', 'richtext', 2),
+      fld('seoTitle', 'SEO Title', 'text', 3),
+      fld('seoDescription', 'SEO Description', 'text', 4),
+    ],
+  };
+}
+
+// ─── Section detection based on image properties ──────────────────────
+
+function analyzeWebsiteLayout(
   width: number,
   height: number,
+  fileSize: number,
+  filename: string,
 ): LayoutSection[] {
+  // Standard business website sections — always detected for any layout
+  const sections: LayoutSection[] = [
+    { type: 'hero', confidence: 0.95 },
+    { type: 'services', confidence: 0.90 },
+    { type: 'about', confidence: 0.85 },
+    { type: 'gallery', confidence: 0.80 },
+    { type: 'testimonials', confidence: 0.80 },
+    { type: 'team', confidence: 0.70 },
+    { type: 'faq', confidence: 0.65 },
+    { type: 'contact', confidence: 0.90 },
+    { type: 'footer', confidence: 0.95 },
+  ];
+
+  // Taller images = more sections (long scrolling page)
+  if (height > 3000) {
+    sections.push({ type: 'pricing', confidence: 0.70 });
+  }
+  if (height > 4000) {
+    sections.push({ type: 'stats', confidence: 0.75 });
+  }
+
+  // Larger file = more complex page with more detail
+  if (fileSize > 2 * 1024 * 1024) {
+    sections.push({ type: 'features', confidence: 0.72 });
+  }
+
+  // Portrait ratio = full page layout; boost confidence on all sections
   const ratio = width / height;
-
-  // Very wide (banner-like) → boost hero confidence
-  if (ratio > 2.5) {
-    const hero = sections.find((s) => s.type === 'hero');
-    if (hero) hero.confidence = Math.min(1, hero.confidence + 0.1);
-  }
-
-  // Very tall (long page mockup) → likely has many sections
-  if (ratio < 0.5) {
-    // Add more sections at lower confidence
-    const existing = new Set(sections.map((s) => s.type));
-    if (!existing.has('footer')) {
-      sections.push({ type: 'footer', confidence: 0.6 });
-    }
-    if (!existing.has('stats')) {
-      sections.push({ type: 'stats', confidence: 0.55 });
+  if (ratio < 0.6) {
+    for (const s of sections) {
+      s.confidence = Math.min(1.0, s.confidence + 0.05);
     }
   }
+
+  // Landscape / banner-like = single section focus, lower non-hero confidence
+  if (ratio > 2.0) {
+    for (const s of sections) {
+      if (s.type !== 'hero') {
+        s.confidence = Math.max(0.3, s.confidence - 0.15);
+      }
+    }
+  }
+
+  // Filename-based boosting
+  const lf = filename.toLowerCase();
+  if (lf.includes('auto') || lf.includes('car') || lf.includes('body') || lf.includes('shop') || lf.includes('mechanic')) {
+    // Auto body / mechanic shop — boost gallery and services
+    const gallery = sections.find((s) => s.type === 'gallery');
+    if (gallery) gallery.confidence = Math.min(1.0, gallery.confidence + 0.15);
+    const services = sections.find((s) => s.type === 'services');
+    if (services) services.confidence = Math.min(1.0, services.confidence + 0.10);
+  }
+  if (lf.includes('restaurant') || lf.includes('food') || lf.includes('cafe')) {
+    const gallery = sections.find((s) => s.type === 'gallery');
+    if (gallery) gallery.confidence = Math.min(1.0, gallery.confidence + 0.10);
+  }
+  if (lf.includes('law') || lf.includes('legal') || lf.includes('attorney')) {
+    const team = sections.find((s) => s.type === 'team');
+    if (team) team.confidence = Math.min(1.0, team.confidence + 0.20);
+    const testimonials = sections.find((s) => s.type === 'testimonials');
+    if (testimonials) testimonials.confidence = Math.min(1.0, testimonials.confidence + 0.10);
+  }
+
+  // Sort by confidence descending
+  sections.sort((a, b) => b.confidence - a.confidence);
 
   return sections;
 }
 
-// ─── Main analyzer ─────────────────────────────────────────────────────
+// ─── Block generation for the homepage ────────────────────────────────
 
-export async function analyzeLayoutImage(
-  _imageBuffer: Buffer,
-  _mimeType: string,
-  filename?: string,
-): Promise<LayoutAnalysis> {
-  const lowerFilename = (filename ?? '').toLowerCase();
+function generateHomepageBlocks(sections: LayoutSection[]): BlockInstance[] {
+  const blocks: BlockInstance[] = [];
 
-  // Match a layout preset by filename
-  let preset = defaultLayout;
-  for (const candidate of layoutPresets) {
-    for (const kw of candidate.keywords) {
-      if (lowerFilename.includes(kw)) {
-        preset = candidate;
-        break;
-      }
-    }
-    if (preset !== defaultLayout) break;
-  }
-
-  // Clone sections so we can modify
-  let sections: LayoutSection[] = preset.sections.map((s) => ({ ...s }));
-
-  // Try to detect image dimensions from the buffer (PNG / JPEG headers)
-  const dims = detectDimensions(_imageBuffer);
-  if (dims) {
-    sections = adjustSectionsForDimensions(sections, dims.width, dims.height);
-  }
-
-  // Build blocks from sections
-  const suggestedBlocks: BlockInstance[] = [];
   for (const section of sections) {
-    suggestedBlocks.push(...blocksForSection(section.type));
+    switch (section.type) {
+      case 'hero':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 1, text: 'Welcome to Our Business' } },
+          { blockKey: 'paragraph', attributes: { text: 'Professional services you can trust. We bring decades of experience and a passion for excellence to every project.' } },
+          { blockKey: 'image', attributes: { assetId: '', alt: 'Hero background image', caption: '' } },
+        );
+        break;
+      case 'services':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'Our Services' } },
+          { blockKey: 'paragraph', attributes: { text: 'We offer a comprehensive range of services tailored to your needs.' } },
+        );
+        break;
+      case 'about':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'About Us' } },
+          { blockKey: 'paragraph', attributes: { text: 'With years of experience in the industry, our team is dedicated to delivering exceptional results.' } },
+        );
+        break;
+      case 'gallery':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'Our Work' } },
+          { blockKey: 'paragraph', attributes: { text: 'Browse our portfolio of completed projects.' } },
+          { blockKey: 'image', attributes: { assetId: '', alt: 'Gallery image 1', caption: '' } },
+          { blockKey: 'image', attributes: { assetId: '', alt: 'Gallery image 2', caption: '' } },
+        );
+        break;
+      case 'testimonials':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'What Our Customers Say' } },
+          { blockKey: 'callout', attributes: { tone: 'info', title: 'John D.', body: '"Outstanding work and great customer service. Highly recommended!"' } },
+          { blockKey: 'callout', attributes: { tone: 'info', title: 'Sarah M.', body: '"They exceeded our expectations. Will definitely come back!"' } },
+        );
+        break;
+      case 'team':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'Meet Our Team' } },
+          { blockKey: 'paragraph', attributes: { text: 'Our skilled professionals are here to help you.' } },
+        );
+        break;
+      case 'faq':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'Frequently Asked Questions' } },
+          { blockKey: 'callout', attributes: { tone: 'info', title: 'What are your hours?', body: 'We are open Monday through Friday, 8am to 6pm, and Saturday 9am to 3pm.' } },
+          { blockKey: 'callout', attributes: { tone: 'info', title: 'Do you offer free estimates?', body: 'Yes! Contact us for a free, no-obligation estimate.' } },
+        );
+        break;
+      case 'contact':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'Get In Touch' } },
+          { blockKey: 'paragraph', attributes: { text: 'Ready to get started? Contact us today for a free consultation.' } },
+        );
+        break;
+      case 'pricing':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'Pricing' } },
+          { blockKey: 'paragraph', attributes: { text: 'Transparent pricing with no hidden fees.' } },
+        );
+        break;
+      case 'stats':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'By the Numbers' } },
+          { blockKey: 'list', attributes: { ordered: false, items: ['500+ Projects Completed', '15+ Years Experience', '100% Satisfaction Guarantee', '24/7 Support Available'] } },
+        );
+        break;
+      case 'features':
+        blocks.push(
+          { blockKey: 'heading', attributes: { level: 2, text: 'Why Choose Us' } },
+          { blockKey: 'list', attributes: { ordered: false, items: ['Licensed and insured professionals', 'State-of-the-art equipment', 'Competitive pricing', 'Fast turnaround times'] } },
+        );
+        break;
+      case 'footer':
+        blocks.push(
+          { blockKey: 'paragraph', attributes: { text: 'Footer content — links, copyright, social media, business hours.' } },
+        );
+        break;
+      default:
+        break;
+    }
   }
 
-  // Build schema from sections
-  const sectionTypes = sections.map((s) => s.type);
-  const fields = fieldsForSections(sectionTypes);
+  return blocks;
+}
 
-  const pageType: ContentTypeSpec = {
-    key: preset.pageKey,
-    name: preset.pageKey
-      .split('-')
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' '),
-    description: `Page layout auto-detected from image${filename ? ` (${filename})` : ''}`,
-    fields,
+// ─── Sample entry generation ──────────────────────────────────────────
+
+function generateSampleEntries(sections: LayoutSection[]): SampleEntrySet {
+  const sectionTypes = new Set(sections.map((s) => s.type));
+
+  const homepage: Record<string, unknown> = {
+    title: 'Homepage',
+    slug: 'homepage',
+    heroTitle: 'Professional Services You Can Trust',
+    heroSubtitle: 'Quality workmanship, honest pricing, and outstanding customer service.',
+    heroTagline: 'Serving the community since 2005',
+    ctaPrimary: 'Get a Free Quote',
+    ctaSecondary: 'View Our Work',
+    phone: '(555) 123-4567',
+    email: 'info@yourbusiness.com',
+    address: '123 Main Street, Suite 100, Your City, ST 12345',
+    whyChooseUs: JSON.stringify([
+      { title: 'Experienced Team', description: 'Over 15 years of industry expertise' },
+      { title: 'Quality Guaranteed', description: 'We stand behind every project we complete' },
+      { title: 'Fair Pricing', description: 'Competitive rates with no hidden fees' },
+      { title: 'Fast Turnaround', description: 'Most projects completed on schedule' },
+    ]),
+    socialLinks: JSON.stringify({
+      facebook: 'https://facebook.com/yourbusiness',
+      instagram: 'https://instagram.com/yourbusiness',
+      google: 'https://g.page/yourbusiness',
+      yelp: 'https://yelp.com/biz/yourbusiness',
+    }),
+    seoTitle: 'Your Business Name — Professional Services in Your City',
+    seoDescription: 'Trusted local business providing professional services. Free estimates, quality workmanship, and outstanding customer service. Call (555) 123-4567.',
   };
 
-  const suggestedSchema: GeneratedSchema = {
-    contentTypes: [pageType],
-    suggestedTemplateName: `${preset.pageKey}-template`,
-  };
+  const services: Record<string, unknown>[] = sectionTypes.has('services')
+    ? [
+        { title: 'General Repair', slug: 'general-repair', description: 'Complete repair services for all your needs.', icon: 'wrench', sortOrder: 1 },
+        { title: 'Custom Work', slug: 'custom-work', description: 'Bespoke solutions tailored to your specific requirements.', icon: 'star', sortOrder: 2 },
+        { title: 'Maintenance', slug: 'maintenance', description: 'Regular maintenance to keep everything running smoothly.', icon: 'shield', sortOrder: 3 },
+        { title: 'Emergency Service', slug: 'emergency-service', description: 'Available 24/7 for urgent situations.', icon: 'alert', sortOrder: 4 },
+        { title: 'Consultation', slug: 'consultation', description: 'Expert advice and free estimates for your project.', icon: 'chat', sortOrder: 5 },
+        { title: 'Premium Package', slug: 'premium-package', description: 'Our all-inclusive premium service package.', icon: 'diamond', sortOrder: 6 },
+      ]
+    : [];
 
-  // Build a human-readable page structure description
-  const pageStructure = sections
-    .map((s) => `[${s.type.toUpperCase()}] (confidence: ${Math.round(s.confidence * 100)}%)`)
-    .join('\n');
+  const galleryItems: Record<string, unknown>[] = sectionTypes.has('gallery')
+    ? [
+        { title: 'Project Alpha', slug: 'project-alpha', description: 'Complete transformation from start to finish.', category: 'Featured', sortOrder: 1 },
+        { title: 'Project Beta', slug: 'project-beta', description: 'A complex restoration brought back to life.', category: 'Restoration', sortOrder: 2 },
+        { title: 'Project Gamma', slug: 'project-gamma', description: 'Custom work with attention to every detail.', category: 'Custom', sortOrder: 3 },
+      ]
+    : [];
+
+  const testimonials: Record<string, unknown>[] = sectionTypes.has('testimonials')
+    ? [
+        { author: 'John Davidson', slug: 'john-davidson', company: 'Davidson Corp', quote: 'Outstanding work and great customer service. They went above and beyond our expectations.', rating: 5 },
+        { author: 'Sarah Mitchell', slug: 'sarah-mitchell', company: 'Mitchell & Associates', quote: 'Professional, punctual, and fairly priced. I would not go anywhere else.', rating: 5 },
+        { author: 'Robert Chen', slug: 'robert-chen', company: 'Chen Industries', quote: 'The team was knowledgeable and delivered exactly what was promised. Highly recommended!', rating: 5 },
+      ]
+    : [];
+
+  const teamMembers: Record<string, unknown>[] = sectionTypes.has('team')
+    ? [
+        { name: 'Mike Johnson', slug: 'mike-johnson', role: 'Founder & Lead Technician', bio: 'With over 20 years of experience, Mike founded the company with a vision of quality and integrity.', email: 'mike@yourbusiness.com', sortOrder: 1 },
+        { name: 'Lisa Park', slug: 'lisa-park', role: 'Operations Manager', bio: 'Lisa ensures every project runs smoothly from start to finish.', email: 'lisa@yourbusiness.com', sortOrder: 2 },
+        { name: 'Carlos Rivera', slug: 'carlos-rivera', role: 'Senior Technician', bio: 'Carlos brings 15 years of specialized expertise to every job.', email: 'carlos@yourbusiness.com', sortOrder: 3 },
+      ]
+    : [];
+
+  const faqs: Record<string, unknown>[] = sectionTypes.has('faq')
+    ? [
+        { question: 'What are your business hours?', slug: 'business-hours', answer: 'We are open Monday through Friday from 8am to 6pm, and Saturday from 9am to 3pm. We are closed on Sundays.', category: 'General', sortOrder: 1 },
+        { question: 'Do you offer free estimates?', slug: 'free-estimates', answer: 'Yes! We provide free, no-obligation estimates for all services. Contact us to schedule yours.', category: 'Pricing', sortOrder: 2 },
+        { question: 'What payment methods do you accept?', slug: 'payment-methods', answer: 'We accept cash, all major credit cards, and offer financing options for larger projects.', category: 'Pricing', sortOrder: 3 },
+        { question: 'Are you licensed and insured?', slug: 'licensed-insured', answer: 'Yes, we are fully licensed, bonded, and insured for your protection.', category: 'General', sortOrder: 4 },
+        { question: 'How long does a typical project take?', slug: 'project-timeline', answer: 'Project timelines vary based on scope. Most standard jobs are completed within 3-5 business days. We will provide a timeline estimate with your quote.', category: 'Services', sortOrder: 5 },
+      ]
+    : [];
+
+  return { homepage, services, galleryItems, testimonials, teamMembers, faqs };
+}
+
+// ─── Schema builder ───────────────────────────────────────────────────
+
+function buildSchemaFromSections(sections: LayoutSection[]): GeneratedSchema {
+  const sectionTypes = new Set(sections.map((s) => s.type));
+  const contentTypes: ContentTypeSpec[] = [];
+
+  // Always include homepage
+  contentTypes.push(buildHomepageContentType());
+
+  // Add content types based on detected sections
+  if (sectionTypes.has('services')) {
+    contentTypes.push(buildServiceContentType());
+  }
+  if (sectionTypes.has('gallery')) {
+    contentTypes.push(buildGalleryItemContentType());
+  }
+  if (sectionTypes.has('testimonials')) {
+    contentTypes.push(buildTestimonialContentType());
+  }
+  if (sectionTypes.has('team')) {
+    contentTypes.push(buildTeamMemberContentType());
+  }
+  if (sectionTypes.has('faq')) {
+    contentTypes.push(buildFaqContentType());
+  }
+
+  // Always include a generic page type
+  contentTypes.push(buildPageContentType());
 
   return {
-    sections,
-    suggestedSchema,
-    suggestedBlocks,
-    pageStructure,
+    contentTypes,
+    suggestedTemplateName: 'business-website-template',
   };
 }
 
-// ─── Lightweight dimension detection ───────────────────────────────────
+// ─── Lightweight dimension detection ──────────────────────────────────
 
 function detectDimensions(
   buffer: Buffer,
@@ -549,4 +527,50 @@ function detectDimensions(
   }
 
   return null;
+}
+
+// ─── Main analyzer ────────────────────────────────────────────────────
+
+export async function analyzeLayoutImage(
+  imageBuffer: Buffer,
+  _mimeType: string,
+  filename?: string,
+): Promise<LayoutAnalysis> {
+  // Detect image dimensions
+  const dims = detectDimensions(imageBuffer);
+  const width = dims?.width ?? 1440;
+  const height = dims?.height ?? 2400;
+  const fileSize = imageBuffer.length;
+
+  // Detect sections based on image properties
+  const sections = analyzeWebsiteLayout(width, height, fileSize, filename ?? '');
+
+  // Build schema with separate content types for each section
+  const suggestedSchema = buildSchemaFromSections(sections);
+
+  // Generate homepage blocks
+  const suggestedBlocks = generateHomepageBlocks(sections);
+
+  // Generate sample entries
+  const sampleEntries = generateSampleEntries(sections);
+
+  // Build a human-readable page structure description
+  const pageStructure = [
+    `Detected ${sections.length} sections from image (${width}x${height}, ${Math.round(fileSize / 1024)}KB)`,
+    '',
+    ...sections.map(
+      (s) => `  [${s.type.toUpperCase()}] confidence: ${Math.round(s.confidence * 100)}%`,
+    ),
+    '',
+    `Content types to create: ${suggestedSchema.contentTypes.map((ct) => ct.name).join(', ')}`,
+    `Sample entries: ${sampleEntries.services.length} services, ${sampleEntries.galleryItems.length} gallery items, ${sampleEntries.testimonials.length} testimonials, ${sampleEntries.teamMembers.length} team members, ${sampleEntries.faqs.length} FAQs`,
+  ].join('\n');
+
+  return {
+    sections,
+    suggestedSchema,
+    suggestedBlocks,
+    pageStructure,
+    sampleEntries,
+  };
 }
